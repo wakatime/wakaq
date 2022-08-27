@@ -13,9 +13,9 @@ Want more features? Implement it yourself in your worker tasks.
 
 ## ToDo
 
-[x] scheduler
-[x] admin info inspection, purging queues, etc
-[ ] signals
-[ ] timeouts
-[ ] logging
-[ ] handle child process crash/exception and re-fork
+* [x] scheduler
+* [x] admin info inspection, purging queues, etc
+* [ ] signals
+* [ ] timeouts
+* [ ] logging
+* [ ] handle child process crash/exception and re-fork
