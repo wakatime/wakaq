@@ -6,7 +6,7 @@ import json
 
 from .scheduler import Scheduler
 from .worker import Worker
-from .utils import import_app, inspect, purge_queue, purge_eta_tasks
+from .utils import import_app, inspect, pending_tasks_in_queue, pending_eta_tasks, purge_queue, purge_eta_tasks
 
 
 @click.command()
@@ -53,22 +53,10 @@ def purge(**options):
     wakaq = import_app(options.pop('app'))
     queue_name = options.pop('queue', None)
     if queue_name is not None:
-        count = purge_queue(wakaq, queue_name=queue_name)
+        count = pending_tasks_in_queue(wakaq, queue_name=queue_name)
+        purge_queue(wakaq, queue_name=queue_name)
         click.echo(f'Purged {count} tasks from {queue_name}.')
     if options.get('eta_tasks'):
-        count = purge_eta_tasks(wakaq)
+        count = pending_eta_tasks(wakaq)
+        purge_eta_tasks(wakaq)
         click.echo(f'Purged {count} eta tasks.')
-
-
-"""
-TODO
-
-1. DONE scheduler
-2. signals
-3. timeouts
-4. logging
-5. DONE admin info inspection, purging queues, etc
-6.
-7. handle child process crash/exception and re-fork
-
-"""
