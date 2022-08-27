@@ -1,0 +1,2 @@
+include README.md LICENSE HISTORY.md requirements/*.txt
+recursive-include src/wakaq *.py

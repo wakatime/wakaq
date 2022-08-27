@@ -1,0 +1,6 @@
+blinker
+click
+croniter
+pytest
+pytest-cov
+python-daemon
