@@ -8,7 +8,7 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 * Scheduled periodic tasks
 * Super minimal
 
-Want more features? Implement it yourself in your worker tasks.
+Want more features like rate limiting, task deduplication, etc? Too bad, I won't accept feature PRs. Implement it yourself in your app’s worker tasks.
 
 
 ## ToDo
