@@ -19,3 +19,4 @@ Want more features? Implement it yourself in your worker tasks.
 * [ ] timeouts
 * [ ] logging
 * [ ] handle child process crash/exception and re-fork
+* [ ] look into spawn instead of fork (https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers)
