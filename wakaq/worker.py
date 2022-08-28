@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
-import daemon
 import os
 import signal
 import time
 
+import daemon
+
 from .exceptions import SoftTimeout
 from .serializer import deserialize
-
 
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])

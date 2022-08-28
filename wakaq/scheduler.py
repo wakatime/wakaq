@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
+from datetime import datetime, timedelta
+
 import daemon
 from croniter import croniter
-from datetime import datetime, timedelta
 
 from .serializer import serialize
 

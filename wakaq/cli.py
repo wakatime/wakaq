@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 
 
-import click
 import json
 
+import click
+
 from .scheduler import Scheduler
-from .worker import Worker
 from .utils import (
     import_app,
     inspect,
-    pending_tasks_in_queue,
     pending_eta_tasks,
-    purge_queue,
+    pending_tasks_in_queue,
     purge_eta_tasks,
+    purge_queue,
 )
+from .worker import Worker
 
 
 @click.command()

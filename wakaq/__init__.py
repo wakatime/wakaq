@@ -3,14 +3,14 @@
 
 import calendar
 import multiprocessing
-import redis
 from datetime import datetime, timedelta
+
+import redis
 
 from .queue import Queue
 from .scheduler import CronTask
 from .serializer import deserialize, serialize
 from .task import Task
-
 
 __all__ = [
     "WakaQ",
