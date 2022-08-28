@@ -84,43 +84,51 @@ class WakaQ:
 
     def _enqueue_at_front(self, task_name: str, queue: str, args: list, kwargs: dict):
         queue = self._decide_queue(queue)
-        payload = serialize({
-            "name": task_name,
-            "args": args,
-            "kwargs": kwargs,
-        })
+        payload = serialize(
+            {
+                "name": task_name,
+                "args": args,
+                "kwargs": kwargs,
+            }
+        )
         self.broker.lpush(queue.broker_key, payload)
 
     def _enqueue_at_end(self, task_name: str, queue: str, args: list, kwargs: dict):
         queue = self._decide_queue(queue)
-        payload = serialize({
-            "name": task_name,
-            "args": args,
-            "kwargs": kwargs,
-        })
+        payload = serialize(
+            {
+                "name": task_name,
+                "args": args,
+                "kwargs": kwargs,
+            }
+        )
         self.broker.rpush(queue.broker_key, payload)
 
-    def _enqueue_with_eta(self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta):
+    def _enqueue_with_eta(
+        self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta
+    ):
         queue = self._decide_queue(queue)
-        payload = serialize({
-            "name": task_name,
-            "args": args,
-            "kwargs": kwargs,
-            "queue": queue.name,
-        })
-        timestamp = calendar.timegm((datetime.utcnow() + eta).utctimetuple())
-        self.broker.zadd(
-            self.eta_task_key, {payload: timestamp}, nx=True
+        payload = serialize(
+            {
+                "name": task_name,
+                "args": args,
+                "kwargs": kwargs,
+                "queue": queue.name,
+            }
         )
+        timestamp = calendar.timegm((datetime.utcnow() + eta).utctimetuple())
+        self.broker.zadd(self.eta_task_key, {payload: timestamp}, nx=True)
 
     def _broadcast(self, task_name: str, queue: str, args: list, kwargs: dict):
         queue = self._decide_queue(queue)
-        payload = serialize({
-            "name": task_name,
-            "queue": queue.name,
-            "args": args,
-            "kwargs": kwargs,
-        })
+        payload = serialize(
+            {
+                "name": task_name,
+                "queue": queue.name,
+                "args": args,
+                "kwargs": kwargs,
+            }
+        )
         return self.broker.publish(self.broadcast_key, payload)
 
     def _decide_queue(self, queue_name: str):
