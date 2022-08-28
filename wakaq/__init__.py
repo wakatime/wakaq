@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from .cli import worker, scheduler
 from .queue import Queue
 from .scheduler import CronTask
-from .serializer import serialize
+from .serializer import deserialize, serialize
 from .task import Task
 
 
@@ -50,6 +50,7 @@ class WakaQ:
         self.queues = [Queue.create(x) for x in queues]
         self.queues.sort(key=lambda q: q.priority)
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
+        self.broker_keys = [x.broker_key for x in self.queues]
         self.schedules = [CronTask.create(x) for x in schedules]
         self.concurrency = abs(int(concurrency)) or multiprocessing.cpu_count()
         self.exclude_queues = self._validate_queue_names(exclude_queues)
@@ -133,6 +134,10 @@ class WakaQ:
             }
         )
         return self.broker.publish(self.broadcast_key, payload)
+
+    def _blocking_dequeue(self):
+        data = self.broker.blpop(self.broker_keys, self.wait_timeout)
+        return deserialize(data[1]) if data is not None else None
 
     def _queue_or_default(self, queue_name: str):
         if queue_name:

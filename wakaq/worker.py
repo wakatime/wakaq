@@ -52,6 +52,8 @@ class Worker:
 
     def _parent(self):
         signal.signal(signal.SIGCHLD, self._on_child_exit)
+        signal.signal(signal.SIGINT, self._on_exit)
+        signal.signal(signal.SIGTERM, self._on_exit)
         self.wakaq.broker.close()
         pubsub = self.wakaq.broker.pubsub()
         pubsub.subscribe(self.wakaq.broadcast_key)
@@ -69,6 +71,8 @@ class Worker:
     def _child(self):
         # ignore ctrl-c sent to process group from terminal
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
         # redis should eventually detect pid change and reset, but we force it
         self.wakaq.broker.connection_pool.reset()
@@ -94,6 +98,10 @@ class Worker:
         except ValueError:
             pass
 
+    def _on_exit(self, signum, frame):
+        self._stop()
+        os._exit(0)
+
     def _on_child_exit(self, signum, frame):
         for child in self.children:
             try:
@@ -118,12 +126,9 @@ class Worker:
             self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
 
     def _execute_next_task_from_queue(self):
-        queues = [x.broker_key for x in self.wakaq.queues]
         print("Checking for tasks...")
-        payload = self.wakaq.broker.blpop(queues, self.wakaq.wait_timeout)
+        payload = self.wakaq._blocking_dequeue()
         if payload is not None:
-            queue, payload = payload
-            payload = deserialize(payload)
             print(f"got task: {payload}")
             task = self.wakaq.tasks[payload["name"]]
             task.fn(*payload["args"], **payload["kwargs"])
