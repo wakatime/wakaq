@@ -9,7 +9,7 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 * Broadcast a task to all workers
 * Super minimal
 
-Want more features like rate limiting, task deduplication, etc? Too bad, I won't accept feature PRs. Implement it yourself in your app’s worker tasks.
+Want more features like rate limiting, task deduplication, etc? Too bad, feature PRs are not accepted. Maximal features belong in your app’s worker tasks.
 
 ## ToDo
 
