@@ -27,14 +27,12 @@ return results"""
 class Worker:
     __slots__ = [
         'wakaq',
-        'concurrency',
-        'exclude_queues',
+        'children',
     ]
 
-    def __init__(self, wakaq=None, concurrency=1, exclude_queues='', foreground=False):
+    def __init__(self, wakaq=None, foreground=False):
         self.wakaq = wakaq
-        self.concurrency = concurrency
-        self.exclude_queues = exclude_queues
+        self.children = []
 
         if foreground:
             self._run()
@@ -44,18 +42,25 @@ class Worker:
             self._run()
 
     def _run(self):
-        is_parent = True
-        for i in range(self.concurrency):
+        pid = None
+        for i in range(self.wakaq.concurrency):
             pid = os.fork()
             if pid == 0:  # child
-                is_parent = False
-                while True:
-                    self._enqueue_ready_eta_tasks()
-                    self._execute_next_task_from_queue()
+                self._child()
+            else:
+                self.children.append(pid)
 
-        if is_parent:
-            while True:
-                time.sleep(10)
+        if pid != 0:  # parent
+            self._parent()
+
+    def _parent(self):
+        while True:
+            time.sleep(10)
+
+    def _child(self):
+        while True:
+            self._enqueue_ready_eta_tasks()
+            self._execute_next_task_from_queue()
 
     def _enqueue_ready_eta_tasks(self):
         script = self.wakaq.broker.register_script(ZRANGEPOP)

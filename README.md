@@ -6,6 +6,7 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 * Queue priority
 * Delayed tasks (run tasks after a timedelta eta)
 * Scheduled periodic tasks
+* Broadcast a task to all workers
 * Super minimal
 
 Want more features like rate limiting, task deduplication, etc? Too bad, I won't accept feature PRs. Implement it yourself in your app’s worker tasks.
@@ -17,8 +18,9 @@ Want more features like rate limiting, task deduplication, etc? Too bad, I won't
 * [ ] signals
 * [ ] timeouts
 * [ ] logging
+* [ ] broadcast task
 * [ ] handle child process crash/exception and re-fork
-* [ ] look into spawn instead of fork (https://docs.python.org/3/library/multiprocessing.html#using-a-pool-of-workers)
+* [ ] close all file descriptors in children and run post_fork hook
 
 ## Example
 

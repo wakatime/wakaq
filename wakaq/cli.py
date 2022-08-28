@@ -11,16 +11,9 @@ from .utils import import_app, inspect, pending_tasks_in_queue, pending_eta_task
 
 @click.command()
 @click.option('--app', required=True, help='Import path of the WakaQ instance.')
-@click.option('--concurrency', type=click.INT, default=1, help='Number of worker processes.')
-@click.option('--exclude-queues', default='', help='Comma separated list of queue names to not process.')
 @click.option('--foreground', is_flag=True, help='Run in foreground; Default is to run as daemon in background.')
 def worker(**options):
     """Run worker(s) to process tasks from queue(s) defined in your app."""
-    try:
-        options['exclude_queues'] = [x.strip().lower() for x in options['exclude_queues'].split(',')]
-    except:
-        click.fail(f'Invalid value for exclude_queues. Must be a list of queue names separated by periods: {options["exclude_queues"]}')
-
     wakaq = import_app(options.pop('app'))
     Worker(wakaq=wakaq, **options)
 

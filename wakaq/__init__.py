@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+import multiprocessing
 import redis
 
 from .cli import worker, scheduler
@@ -24,12 +25,16 @@ class WakaQ:
     wait_timeout = None
     eta_task_key = 'wakaq-eta'
     schedules = []
+    concurrency = 0
+    exclude_queues = []
 
-    def __init__(self, queues=[], schedules=[], host='localhost', port=6379, socket_timeout=15, socket_connect_timeout=15, health_check_interval=30, wait_timeout=10):
+    def __init__(self, queues=[], schedules=[], host='localhost', port=6379, concurrency=0, exclude_queues=[], socket_timeout=15, socket_connect_timeout=15, health_check_interval=30, wait_timeout=10):
         self.queues = [Queue.create(x) for x in queues]
         self.queues.sort(key=lambda q: q.priority)
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
         self.schedules = [CronTask.create(x) for x in schedules]
+        self.concurrency = abs(int(concurrency)) or multiprocessing.cpu_count()
+        self.exclude_queues = self._validate_queue_names(exclude_queues)
         self.wait_timeout = wait_timeout
         self.broker = redis.Redis(
             host=host,
@@ -47,3 +52,13 @@ class WakaQ:
             raise Exception(f'Duplicate task name: {t.name}')
         self.tasks[t.name] = t
         return t.fn
+
+    def _validate_queue_names(self, queue_names: list) -> list:
+        try:
+            queue_names = [x for x in queue_names]
+        except:
+            return []
+        for queue_name in queue_names:
+            if queue_name not in self.queues_by_name:
+                raise Exception(f'Invalid queue: {queue_name}')
+        return queue_names
