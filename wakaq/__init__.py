@@ -45,7 +45,7 @@ class WakaQ:
         socket_timeout=15,
         socket_connect_timeout=15,
         health_check_interval=30,
-        wait_timeout=2,
+        wait_timeout=1,
     ):
         self.queues = [Queue.create(x) for x in queues]
         self.queues.sort(key=lambda q: q.priority)
@@ -54,7 +54,15 @@ class WakaQ:
         self.schedules = [CronTask.create(x) for x in schedules]
         self.concurrency = abs(int(concurrency)) or multiprocessing.cpu_count()
         self.exclude_queues = self._validate_queue_names(exclude_queues)
+        self.soft_timeout = soft_timeout
+        self.hard_timeout = hard_timeout
         self.wait_timeout = wait_timeout
+        if soft_timeout and int(soft_timeout) <= int(wait_timeout):
+            raise Exception(f'Soft timeout ({soft_timeout}) can not be less than or equal to wait timeout ({wait_timeout}).')
+        if hard_timeout and int(hard_timeout) <= int(wait_timeout):
+            raise Exception(f'Hard timeout ({hard_timeout}) can not be less than or equal to wait timeout ({wait_timeout}).')
+        if soft_timeout and hard_timeout and int(hard_timeout) <= int(soft_timeout):
+            raise Exception(f'Hard timeout ({hard_timeout}) can not be less than or equal to soft timeout ({soft_timeout}).')
         self.tasks = {}
         self.broker = redis.Redis(
             host=host,

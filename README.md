@@ -17,7 +17,7 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 * [x] admin info inspection, purging queues, etc
 * [x] broadcast task
 * [x] handle child process crash/exception and re-fork
-* [ ] timeouts
+* [x] timeouts
 * [ ] logging
 * [ ] signals
 * [ ] pre_fork(parent only) and post_fork(children only) hooks/signals
