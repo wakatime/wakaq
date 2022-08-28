@@ -149,7 +149,7 @@ class Worker:
 
     def _on_soft_timeout_child(self, signum, frame):
         self._stop_processing = True
-        raise SoftTimeout('SoftTimeout')
+        raise SoftTimeout("SoftTimeout")
 
     def _on_child_exited(self, signum, frame):
         for child in self.children:
@@ -181,7 +181,7 @@ class Worker:
             print(f"got task: {payload}")
             task = self.wakaq.tasks[payload["name"]]
             task.fn(*payload["args"], **payload["kwargs"])
-        os.write(self._write_fd, b'.')
+        os.write(self._write_fd, b".")
 
     def _check_child_runtimes(self):
         for child in self.children:
@@ -189,16 +189,22 @@ class Worker:
                 os.set_blocking(child.fd, False)
                 ping = os.read(child.fd, 64000)
             except OSError:
-                ping = b''
-            if ping != b'':
+                ping = b""
+            if ping != b"":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
             elif self.wakaq.soft_timeout or self.wakaq.hard_timeout:
                 runtime = time.time() - child.last_ping
                 if self.wakaq.hard_timeout and runtime > self.wakaq.hard_timeout:
                     os.kill(child.pid, signal.SIGKILL)
-                elif not child.soft_timeout_reached and self.wakaq.soft_timeout and runtime > self.wakaq.soft_timeout:
-                    child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
+                elif (
+                    not child.soft_timeout_reached
+                    and self.wakaq.soft_timeout
+                    and runtime > self.wakaq.soft_timeout
+                ):
+                    child.soft_timeout_reached = (
+                        True  # prevent raising SoftTimeout twice for same child
+                    )
                     os.kill(child.pid, signal.SIGQUIT)
 
     def _refork_missing_children(self):

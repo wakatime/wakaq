@@ -6,7 +6,6 @@ import multiprocessing
 import redis
 from datetime import datetime, timedelta
 
-from .cli import worker, scheduler
 from .queue import Queue
 from .scheduler import CronTask
 from .serializer import deserialize, serialize
@@ -15,8 +14,8 @@ from .task import Task
 
 __all__ = [
     "WakaQ",
-    "worker",
-    "scheduler",
+    "Queue",
+    "CronTask",
 ]
 
 
@@ -58,11 +57,17 @@ class WakaQ:
         self.hard_timeout = hard_timeout
         self.wait_timeout = wait_timeout
         if soft_timeout and int(soft_timeout) <= int(wait_timeout):
-            raise Exception(f'Soft timeout ({soft_timeout}) can not be less than or equal to wait timeout ({wait_timeout}).')
+            raise Exception(
+                f"Soft timeout ({soft_timeout}) can not be less than or equal to wait timeout ({wait_timeout})."
+            )
         if hard_timeout and int(hard_timeout) <= int(wait_timeout):
-            raise Exception(f'Hard timeout ({hard_timeout}) can not be less than or equal to wait timeout ({wait_timeout}).')
+            raise Exception(
+                f"Hard timeout ({hard_timeout}) can not be less than or equal to wait timeout ({wait_timeout})."
+            )
         if soft_timeout and hard_timeout and int(hard_timeout) <= int(soft_timeout):
-            raise Exception(f'Hard timeout ({hard_timeout}) can not be less than or equal to soft timeout ({soft_timeout}).')
+            raise Exception(
+                f"Hard timeout ({hard_timeout}) can not be less than or equal to soft timeout ({soft_timeout})."
+            )
         self.tasks = {}
         self.broker = redis.Redis(
             host=host,
