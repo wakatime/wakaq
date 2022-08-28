@@ -24,6 +24,7 @@ class WakaQ:
     broker = None
     wait_timeout = None
     eta_task_key = 'wakaq-eta'
+    broadcast_key = 'wakaq-broadcast'
     schedules = []
     concurrency = 0
     exclude_queues = []

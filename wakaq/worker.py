@@ -54,8 +54,18 @@ class Worker:
 
     def _parent(self):
         signal.signal(signal.SIGCHLD, self._on_child_exit)
+        self.wakaq.broker.close()
+        pubsub = self.wakaq.broker.pubsub()
+        pubsub.subscribe(self.wakaq.broadcast_key)
         while True:
-            time.sleep(10)
+            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=10)
+            if msg:
+                payload = msg['data']
+                payload = deserialize(payload)
+                queue = payload.pop('queue')
+                queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
+                payload = serialize(payload)
+                self.wakaq.broker.lpush(queue.broker_key, payload)
 
     def _child(self):
         # ignore ctrl-c sent to process group from terminal
