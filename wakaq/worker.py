@@ -68,6 +68,16 @@ class Worker:
         if pid != 0:  # parent
             self._parent()
 
+    def _fork(self) -> int:
+        r, w = os.pipe()
+        pid = os.fork()
+        if pid == 0:
+            os.close(r)
+            self._child(w)
+        else:
+            self._add_child(pid, r)
+        return pid
+
     def _parent(self):
         signal.signal(signal.SIGCHLD, self._on_child_exited)
         signal.signal(signal.SIGINT, self._on_exit_parent)
@@ -107,16 +117,6 @@ class Worker:
 
         while not self._stop_processing:
             self._execute_next_task_from_queue()
-
-    def _fork(self) -> int:
-        r, w = os.pipe()
-        pid = os.fork()
-        if pid == 0:
-            os.close(r)
-            self._child(w)
-        else:
-            self._add_child(pid, r)
-        return pid
 
     def _add_child(self, pid, fd):
         self.children.append(Child(pid, fd))
