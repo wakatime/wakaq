@@ -48,11 +48,12 @@ class Scheduler:
         'schedules',
     ]
 
-    def __init__(self, wakaq=None, foreground=False):
+    def __init__(self, wakaq=None):
         self.wakaq = wakaq
 
+    def start(self, foreground=False):
         if len(self.wakaq.schedules) == 0:
-            return 'No scheduled tasks found.'
+            raise Exception('No scheduled tasks found.')
 
         self.schedules = []
         for schedule in self.wakaq.schedules:

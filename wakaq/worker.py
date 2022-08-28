@@ -3,6 +3,7 @@
 
 import daemon
 import os
+import signal
 import time
 
 from .queue import Queue
@@ -30,8 +31,10 @@ class Worker:
         'children',
     ]
 
-    def __init__(self, wakaq=None, foreground=False):
+    def __init__(self, wakaq=None):
         self.wakaq = wakaq
+
+    def start(self, foreground=False):
         self.children = []
 
         if foreground:
@@ -44,26 +47,46 @@ class Worker:
     def _run(self):
         pid = None
         for i in range(self.wakaq.concurrency):
-            pid = os.fork()
-            if pid == 0:  # child
-                self._child()
-            else:
-                self.children.append(pid)
+            pid = self._fork()
 
         if pid != 0:  # parent
             self._parent()
 
     def _parent(self):
+        signal.signal(signal.SIGCHLD, self._on_child_exit)
         while True:
             time.sleep(10)
 
     def _child(self):
+        # ignore ctrl-c sent to process group from terminal
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         # redis should eventually detect pid change and reset, but we force it
         self.wakaq.broker.connection_pool.reset()
 
         while True:
             self._enqueue_ready_eta_tasks()
             self._execute_next_task_from_queue()
+
+    def _fork(self) -> int:
+        pid = os.fork()
+        if pid == 0:
+            self._child()
+        else:
+            self.children.append(pid)
+        return pid
+
+    def _on_child_exit(self, signum, frame):
+        for child in self.children:
+            try:
+                pid, _ = os.waitpid(child, os.WNOHANG)
+                if pid != 0:  # child exited
+                    self.children.remove(child)
+            except InterruptedError:  # child exited while calling os.waitpid
+                self.children.remove(child)
+            except ChildProcessError:  # child pid no longer valid
+                self.children.remove(child)
+        self._refork_missing_children()
 
     def _enqueue_ready_eta_tasks(self):
         script = self.wakaq.broker.register_script(ZRANGEPOP)
@@ -85,3 +108,7 @@ class Worker:
             print(f'got task: {payload}')
             task = self.wakaq.tasks[payload['name']]
             task.fn(*payload['args'], **payload['kwargs'])
+
+    def _refork_missing_children(self):
+        for i in range(self.wakaq.concurrency - len(self.children)):
+            self._fork()

@@ -15,7 +15,8 @@ from .utils import import_app, inspect, pending_tasks_in_queue, pending_eta_task
 def worker(**options):
     """Run worker(s) to process tasks from queue(s) defined in your app."""
     wakaq = import_app(options.pop('app'))
-    Worker(wakaq=wakaq, **options)
+    worker = Worker(wakaq=wakaq)
+    worker.start(**options)
 
 
 @click.command()
@@ -24,9 +25,8 @@ def worker(**options):
 def scheduler(**options):
     """Run a scheduler to enqueue periodic tasks based on a schedule defined in your app."""
     wakaq = import_app(options.pop('app'))
-    result = Scheduler(wakaq=wakaq, **options)
-    if result:
-        click.fail(result)
+    scheduler = Scheduler(wakaq=wakaq)
+    scheduler.start(**options)
 
 
 @click.command()
