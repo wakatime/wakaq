@@ -83,7 +83,7 @@ class WakaQ:
         return queue_names
 
     def _enqueue_at_front(self, task_name: str, queue: str, args: list, kwargs: dict):
-        queue = self._decide_queue(queue)
+        queue = self._queue_or_default(queue)
         payload = serialize(
             {
                 "name": task_name,
@@ -94,7 +94,7 @@ class WakaQ:
         self.broker.lpush(queue.broker_key, payload)
 
     def _enqueue_at_end(self, task_name: str, queue: str, args: list, kwargs: dict):
-        queue = self._decide_queue(queue)
+        queue = self._queue_or_default(queue)
         payload = serialize(
             {
                 "name": task_name,
@@ -107,7 +107,7 @@ class WakaQ:
     def _enqueue_with_eta(
         self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta
     ):
-        queue = self._decide_queue(queue)
+        queue = self._queue_or_default(queue)
         payload = serialize(
             {
                 "name": task_name,
@@ -120,7 +120,7 @@ class WakaQ:
         self.broker.zadd(self.eta_task_key, {payload: timestamp}, nx=True)
 
     def _broadcast(self, task_name: str, queue: str, args: list, kwargs: dict):
-        queue = self._decide_queue(queue)
+        queue = self._queue_or_default(queue)
         payload = serialize(
             {
                 "name": task_name,
@@ -131,11 +131,9 @@ class WakaQ:
         )
         return self.broker.publish(self.broadcast_key, payload)
 
-    def _decide_queue(self, queue_name: str):
+    def _queue_or_default(self, queue_name: str):
         if queue_name:
             return Queue.create(queue_name, queues_by_name=self.queues_by_name)
 
-        if self.queue:
-            return self.queue
-
+        # return lowest priority queue by default
         return self.queues[-1]

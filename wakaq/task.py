@@ -32,7 +32,7 @@ class Task:
     def delay(self, *args, **kwargs):
         """Run task in the background."""
 
-        queue = kwargs.pop("queue", None)
+        queue = kwargs.pop("queue", None) or self.queue
         eta = kwargs.pop("eta", None)
         if eta:
             self.wakaq._enqueue_with_eta(self.name, queue, args, kwargs, eta)
@@ -47,5 +47,5 @@ class Task:
         Returns the number of workers the task was sent to.
         """
 
-        queue = kwargs.pop("queue", None)
+        queue = kwargs.pop("queue", None) or self.queue
         return self.wakaq._broadcast(self.name, queue, args, kwargs)
