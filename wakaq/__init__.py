@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
 
+import calendar
 import multiprocessing
 import redis
+from datetime import datetime, timedelta
 
 from .cli import worker, scheduler
 from .queue import Queue
 from .scheduler import CronTask
+from .serializer import serialize
 from .task import Task
 
 
@@ -78,3 +81,53 @@ class WakaQ:
             if queue_name not in self.queues_by_name:
                 raise Exception(f"Invalid queue: {queue_name}")
         return queue_names
+
+    def _enqueue_at_front(self, task_name: str, queue: str, args: list, kwargs: dict):
+        queue = self._decide_queue(queue)
+        payload = serialize({
+            "name": task_name,
+            "args": args,
+            "kwargs": kwargs,
+        })
+        self.broker.lpush(queue.broker_key, payload)
+
+    def _enqueue_at_end(self, task_name: str, queue: str, args: list, kwargs: dict):
+        queue = self._decide_queue(queue)
+        payload = serialize({
+            "name": task_name,
+            "args": args,
+            "kwargs": kwargs,
+        })
+        self.broker.rpush(queue.broker_key, payload)
+
+    def _enqueue_with_eta(self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta):
+        queue = self._decide_queue(queue)
+        payload = serialize({
+            "name": task_name,
+            "args": args,
+            "kwargs": kwargs,
+            "queue": queue.name,
+        })
+        timestamp = calendar.timegm((datetime.utcnow() + eta).utctimetuple())
+        self.broker.zadd(
+            self.eta_task_key, {payload: timestamp}, nx=True
+        )
+
+    def _broadcast(self, task_name: str, queue: str, args: list, kwargs: dict):
+        queue = self._decide_queue(queue)
+        payload = serialize({
+            "name": task_name,
+            "queue": queue.name,
+            "args": args,
+            "kwargs": kwargs,
+        })
+        return self.broker.publish(self.broadcast_key, payload)
+
+    def _decide_queue(self, queue_name: str):
+        if queue_name:
+            return Queue.create(queue_name, queues_by_name=self.queues_by_name)
+
+        if self.queue:
+            return self.queue
+
+        return self.queues[-1]

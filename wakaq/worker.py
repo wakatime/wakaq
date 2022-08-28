@@ -6,8 +6,7 @@ import os
 import signal
 import time
 
-from .queue import Queue
-from .serializer import deserialize, serialize
+from .serializer import deserialize
 
 
 ZRANGEPOP = """
@@ -21,6 +20,7 @@ class Worker:
     __slots__ = [
         "wakaq",
         "children",
+        "_stop_processing",
     ]
 
     def __init__(self, wakaq=None):
@@ -28,6 +28,7 @@ class Worker:
 
     def start(self, foreground=False):
         self.children = []
+        self._stop_processing = False
 
         if foreground:
             self._run()
@@ -35,6 +36,11 @@ class Worker:
 
         with daemon.DaemonContext():
             self._run()
+
+    def _stop(self):
+        self._stop_processing = True
+        for child in self.children:
+            os.kill(child, signal.SIGTERM)
 
     def _run(self):
         pid = None
@@ -54,10 +60,11 @@ class Worker:
             if msg:
                 payload = msg["data"]
                 payload = deserialize(payload)
+                task_name = payload.pop("name")
                 queue = payload.pop("queue")
-                queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
-                payload = serialize(payload)
-                self.wakaq.broker.lpush(queue.broker_key, payload)
+                args = payload.pop("args")
+                kwargs = payload.pop("kwargs")
+                self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
 
     def _child(self):
         # ignore ctrl-c sent to process group from terminal
@@ -75,19 +82,28 @@ class Worker:
         if pid == 0:
             self._child()
         else:
-            self.children.append(pid)
+            self._add_child(pid)
         return pid
+
+    def _add_child(self, child):
+        self.children.append(child)
+
+    def _remove_child(self, child):
+        try:
+            self.children.remove(child)
+        except ValueError:
+            pass
 
     def _on_child_exit(self, signum, frame):
         for child in self.children:
             try:
                 pid, _ = os.waitpid(child, os.WNOHANG)
                 if pid != 0:  # child exited
-                    self.children.remove(child)
+                    self._remove_child(child)
             except InterruptedError:  # child exited while calling os.waitpid
-                self.children.remove(child)
+                self._remove_child(child)
             except ChildProcessError:  # child pid no longer valid
-                self.children.remove(child)
+                self._remove_child(child)
         self._refork_missing_children()
 
     def _enqueue_ready_eta_tasks(self):
@@ -95,10 +111,11 @@ class Worker:
         results = script(keys=[self.wakaq.eta_task_key], args=[int(round(time.time()))])
         for payload in results:
             payload = deserialize(payload)
+            task_name = payload.pop("name")
             queue = payload.pop("queue")
-            queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
-            payload = serialize(payload)
-            self.wakaq.broker.lpush(queue.broker_key, payload)
+            args = payload.pop("args")
+            kwargs = payload.pop("kwargs")
+            self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
 
     def _execute_next_task_from_queue(self):
         queues = [x.broker_key for x in self.wakaq.queues]
@@ -111,6 +128,14 @@ class Worker:
             task = self.wakaq.tasks[payload["name"]]
             task.fn(*payload["args"], **payload["kwargs"])
 
+    def _setup_child_signals(self):
+        def handle_sigterm(signum, frame):
+            self._stop_processing = True
+
+        signal.signal(signal.SIGTERM, handle_sigterm)
+
     def _refork_missing_children(self):
+        if self._stop_processing:
+            return
         for i in range(self.wakaq.concurrency - len(self.children)):
             self._fork()
