@@ -10,42 +10,52 @@ from .serializer import serialize
 
 class CronTask:
     __slots__ = [
-        'schedule',
-        'task_name',
-        'queue_name',
-        'args',
-        'kwargs',
+        "schedule",
+        "task_name",
+        "queue_name",
+        "args",
+        "kwargs",
     ]
 
-    def __init__(self, schedule=None, task_name=None, queue_name=None, args=None, kwargs=None):
+    def __init__(
+        self, schedule=None, task_name=None, queue_name=None, args=None, kwargs=None
+    ):
         if not croniter.is_valid(schedule):
-            raise Exception(f'Invalid cron schedule (min hour dom month dow): {schedule}')
+            raise Exception(
+                f"Invalid cron schedule (min hour dom month dow): {schedule}"
+            )
 
         self.schedule = schedule
         self.task_name = task_name
         self.queue_name = queue_name
-        self.payload = serialize({
-            'name': task_name,
-            'args': args,
-            'kwargs': kwargs,
-        })
+        self.payload = serialize(
+            {
+                "name": task_name,
+                "args": args,
+                "kwargs": kwargs,
+            }
+        )
 
     @classmethod
     def create(cls, obj, queues_by_name=None):
         if isinstance(obj, cls):
-            if queues_by_name is not None and obj.queue_name and obj.queue_name not in queues_by_name:
-                raise Exception(f'Unknown queue: {obj.queue_name}')
+            if (
+                queues_by_name is not None
+                and obj.queue_name
+                and obj.queue_name not in queues_by_name
+            ):
+                raise Exception(f"Unknown queue: {obj.queue_name}")
             return obj
         elif isinstance(obj, (list, tuple)) and len(obj) == 4:
             return cls(schedule=obj[0], task_name=obj[1], args=obj[2], kwargs=obj[3])
         else:
-            raise Exception(f'Invalid schedule: {obj}')
+            raise Exception(f"Invalid schedule: {obj}")
 
 
 class Scheduler:
     __slots__ = [
-        'wakaq',
-        'schedules',
+        "wakaq",
+        "schedules",
     ]
 
     def __init__(self, wakaq=None):
@@ -53,11 +63,13 @@ class Scheduler:
 
     def start(self, foreground=False):
         if len(self.wakaq.schedules) == 0:
-            raise Exception('No scheduled tasks found.')
+            raise Exception("No scheduled tasks found.")
 
         self.schedules = []
         for schedule in self.wakaq.schedules:
-            self.schedules.append(CronTask.create(schedule, queues_by_name=self.wakaq.queues_by_name))
+            self.schedules.append(
+                CronTask.create(schedule, queues_by_name=self.wakaq.queues_by_name)
+            )
 
         if foreground:
             self._run()
@@ -83,7 +95,10 @@ class Scheduler:
                     self.wakaq.broker.lpush(queue.broker_key, cron_task.payload)
 
             upcoming_tasks = []
-            crons = [(croniter(x.schedule, base).get_next(datetime), x) for x in self.schedules]
+            crons = [
+                (croniter(x.schedule, base).get_next(datetime), x)
+                for x in self.schedules
+            ]
             sleep_until = base + timedelta(days=1)
 
             for dt, cron_task in crons:
@@ -96,4 +111,4 @@ class Scheduler:
             base = sleep_until
 
     def _is_same_minute_precision(self, a, b):
-        return a.strftime('%Y%m%d%H%M') == b.strftime('%Y%m%d%H%M')
+        return a.strftime("%Y%m%d%H%M") == b.strftime("%Y%m%d%H%M")

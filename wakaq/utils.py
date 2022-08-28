@@ -5,7 +5,7 @@ from importlib import import_module
 
 
 def import_app(app):
-    module_path, class_name = app.rsplit('.', 1)
+    module_path, class_name = app.rsplit(".", 1)
     module = import_module(module_path)
     wakaq = getattr(module, class_name)
     return wakaq
@@ -13,17 +13,17 @@ def import_app(app):
 
 def inspect(app):
     result = {
-        'queues': {},
-        'eta': {
-            'pending_tasks': pending_eta_tasks(app),
+        "queues": {},
+        "eta": {
+            "pending_tasks": pending_eta_tasks(app),
         },
     }
     for queue in app.queues:
-        result['queues'][queue.name] = {
-            'name': queue.name,
-            'priority': queue.priority,
-            'broker_key': queue.broker_key,
-            'pending_tasks': pending_tasks_in_queue(app, queue),
+        result["queues"][queue.name] = {
+            "name": queue.name,
+            "priority": queue.priority,
+            "broker_key": queue.broker_key,
+            "pending_tasks": pending_tasks_in_queue(app, queue),
         }
     return result
 
@@ -48,7 +48,7 @@ def purge_queue(app, queue_name: str):
 
 
 def pending_eta_tasks(app) -> int:
-    return app.broker.zcount(app.eta_task_key, '-inf', '+inf')
+    return app.broker.zcount(app.eta_task_key, "-inf", "+inf")
 
 
 def purge_eta_tasks(app):

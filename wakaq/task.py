@@ -10,10 +10,10 @@ from .serializer import serialize
 
 class Task:
     __slots__ = [
-        'name',
-        'fn',
-        'wakaq',
-        'queue',
+        "name",
+        "fn",
+        "wakaq",
+        "queue",
     ]
 
     def __init__(self, fn=None, wakaq=None, queue=None):
@@ -36,8 +36,8 @@ class Task:
     def delay(self, *args, **kwargs):
         """Run task in the background."""
 
-        queue = kwargs.pop('queue', None)
-        eta = kwargs.pop('eta', None)
+        queue = kwargs.pop("queue", None)
+        eta = kwargs.pop("eta", None)
         if queue:
             queue = self._create_queue(queue)
         else:
@@ -47,15 +47,17 @@ class Task:
                 queue = self.wakaq.queues[-1]
 
         payload = {
-            'name': self.name,
-            'args': args,
-            'kwargs': kwargs,
+            "name": self.name,
+            "args": args,
+            "kwargs": kwargs,
         }
         if eta:
-            payload['queue'] = queue.name
+            payload["queue"] = queue.name
         payload = serialize(payload)
         if eta:
-            self.wakaq.broker.zadd(self.wakaq.eta_task_key, {payload: time.time()}, nx=True)
+            self.wakaq.broker.zadd(
+                self.wakaq.eta_task_key, {payload: time.time()}, nx=True
+            )
         else:
             self.wakaq.broker.rpush(queue.broker_key, payload)
 
@@ -67,7 +69,7 @@ class Task:
         Returns the number of workers the task was sent to.
         """
 
-        queue = kwargs.pop('queue', None)
+        queue = kwargs.pop("queue", None)
         if queue:
             queue = self._create_queue(queue)
         else:
@@ -77,10 +79,10 @@ class Task:
                 queue = self.wakaq.queues[-1]
 
         payload = {
-            'name': self.name,
-            'queue': queue.name,
-            'args': args,
-            'kwargs': kwargs,
+            "name": self.name,
+            "queue": queue.name,
+            "args": args,
+            "kwargs": kwargs,
         }
         payload = serialize(payload)
         return self.wakaq.broker.publish(self.wakaq.broadcast_key, payload)

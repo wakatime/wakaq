@@ -27,8 +27,8 @@ return results"""
 
 class Worker:
     __slots__ = [
-        'wakaq',
-        'children',
+        "wakaq",
+        "children",
     ]
 
     def __init__(self, wakaq=None):
@@ -60,9 +60,9 @@ class Worker:
         while True:
             msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=10)
             if msg:
-                payload = msg['data']
+                payload = msg["data"]
                 payload = deserialize(payload)
-                queue = payload.pop('queue')
+                queue = payload.pop("queue")
                 queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
                 payload = serialize(payload)
                 self.wakaq.broker.lpush(queue.broker_key, payload)
@@ -103,21 +103,21 @@ class Worker:
         results = script(keys=[self.wakaq.eta_task_key], args=[int(round(time.time()))])
         for payload in results:
             payload = deserialize(payload)
-            queue = payload.pop('queue')
+            queue = payload.pop("queue")
             queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
             payload = serialize(payload)
             self.wakaq.broker.lpush(queue.broker_key, payload)
 
     def _execute_next_task_from_queue(self):
         queues = [x.broker_key for x in self.wakaq.queues]
-        print('Checking for tasks...')
+        print("Checking for tasks...")
         payload = self.wakaq.broker.blpop(queues, self.wakaq.wait_timeout)
         if payload is not None:
             queue, payload = payload
             payload = deserialize(payload)
-            print(f'got task: {payload}')
-            task = self.wakaq.tasks[payload['name']]
-            task.fn(*payload['args'], **payload['kwargs'])
+            print(f"got task: {payload}")
+            task = self.wakaq.tasks[payload["name"]]
+            task.fn(*payload["args"], **payload["kwargs"])
 
     def _refork_missing_children(self):
         for i in range(self.wakaq.concurrency - len(self.children)):
