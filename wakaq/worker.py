@@ -58,6 +58,9 @@ class Worker:
             time.sleep(10)
 
     def _child(self):
+        # redis should eventually detect pid change and reset, but we force it
+        self.wakaq.broker.connection_pool.reset()
+
         while True:
             self._enqueue_ready_eta_tasks()
             self._execute_next_task_from_queue()
