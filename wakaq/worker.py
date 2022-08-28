@@ -181,7 +181,7 @@ class Worker:
             print(f"got task: {payload}")
             task = self.wakaq.tasks[payload["name"]]
             task.fn(*payload["args"], **payload["kwargs"])
-        os.write(self._write_fd, b'1')
+        os.write(self._write_fd, b'.')
 
     def _check_child_runtimes(self):
         for child in self.children:
