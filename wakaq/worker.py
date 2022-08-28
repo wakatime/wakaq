@@ -16,14 +16,6 @@ redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
 return results
 """
 
-ZRANGEPOP2 = """
-local results = redis.call('ZRANGE', KEYS[1], 0, ARGV[1], 'BYSCORE')
-local removed = redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
-if #results ~= tonumber(removed) then
-    error('Removed different number of tasks than retrieved')
-end
-return results"""
-
 
 class Worker:
     __slots__ = [
