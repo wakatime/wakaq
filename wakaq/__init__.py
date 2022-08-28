@@ -45,7 +45,7 @@ class WakaQ:
         socket_timeout=15,
         socket_connect_timeout=15,
         health_check_interval=30,
-        wait_timeout=10,
+        wait_timeout=2,
     ):
         self.queues = [Queue.create(x) for x in queues]
         self.queues.sort(key=lambda q: q.priority)
