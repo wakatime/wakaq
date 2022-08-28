@@ -37,6 +37,7 @@ class Worker:
         "wakaq",
         "children",
         "_stop_processing",
+        "_pubsub",
         "_write_fd",
     ]
 
@@ -71,23 +72,14 @@ class Worker:
         signal.signal(signal.SIGCHLD, self._on_child_exited)
         signal.signal(signal.SIGINT, self._on_exit_parent)
         signal.signal(signal.SIGTERM, self._on_exit_parent)
-        self.wakaq.broker.close()
-        pubsub = self.wakaq.broker.pubsub()
-        pubsub.subscribe(self.wakaq.broadcast_key)
+
+        self._pubsub = self.wakaq.broker.pubsub()
+        self._pubsub.subscribe(self.wakaq.broadcast_key)
+
         while not self._stop_processing:
-
-            # listen for broadcast tasks
-            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
-            if msg:
-                payload = msg["data"]
-                payload = deserialize(payload)
-                task_name = payload.pop("name")
-                queue = payload.pop("queue")
-                args = payload.pop("args")
-                kwargs = payload.pop("kwargs")
-                self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
-
+            self._enqueue_ready_eta_tasks()
             self._check_child_runtimes()
+            self._listen_for_broadcast_task()
 
         if self._stop_processing:
             while len(self.children) > 0:
@@ -114,7 +106,6 @@ class Worker:
         self.wakaq.broker.connection_pool.reset()
 
         while not self._stop_processing:
-            self._enqueue_ready_eta_tasks()
             self._execute_next_task_from_queue()
 
     def _fork(self) -> int:
@@ -198,6 +189,17 @@ class Worker:
                 elif not child.soft_timeout_reached and self.wakaq.soft_timeout and runtime > self.wakaq.soft_timeout:
                     child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
                     os.kill(child.pid, signal.SIGQUIT)
+
+    def _listen_for_broadcast_task(self):
+        msg = self._pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
+        if msg:
+            payload = msg["data"]
+            payload = deserialize(payload)
+            task_name = payload.pop("name")
+            queue = payload.pop("queue")
+            args = payload.pop("args")
+            kwargs = payload.pop("kwargs")
+            self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
 
     def _refork_missing_children(self):
         if self._stop_processing:
