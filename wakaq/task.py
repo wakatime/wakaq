@@ -3,6 +3,8 @@
 
 from functools import wraps
 
+from .queue import Queue
+
 
 class Task:
     __slots__ = [
@@ -16,7 +18,7 @@ class Task:
         self.name = fn.__name__
         self.wakaq = wakaq
         if queue:
-            self.queue = self._create_queue(queue)
+            self.queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
         else:
             self.queue = None
 
@@ -24,12 +26,12 @@ class Task:
         def inner(*args, **kwargs):
             return fn(*args, **kwargs)
 
-        inner.delay = self.delay
-        inner.broadcast = self.broadcast
+        inner.delay = self._delay
+        inner.broadcast = self._broadcast
 
         self.fn = inner
 
-    def delay(self, *args, **kwargs):
+    def _delay(self, *args, **kwargs):
         """Run task in the background."""
 
         queue = kwargs.pop("queue", None) or self.queue
@@ -39,7 +41,7 @@ class Task:
         else:
             self.wakaq._enqueue_at_end(self.name, queue, args, kwargs)
 
-    def broadcast(self, *args, **kwargs) -> int:
+    def _broadcast(self, *args, **kwargs) -> int:
         """Run task in the background on all workers.
 
         Only runs the task once per worker parent daemon, no matter the worker's concurrency.

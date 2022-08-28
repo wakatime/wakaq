@@ -65,12 +65,15 @@ class WakaQ:
             socket_connect_timeout=socket_connect_timeout,
         )
 
-    def task(self, fn, queue=None):
-        t = Task(fn=fn, wakaq=self, queue=queue)
-        if t.name in self.tasks:
-            raise Exception(f"Duplicate task name: {t.name}")
-        self.tasks[t.name] = t
-        return t.fn
+    def task(self, fn=None, queue=None):
+        def wrap(f):
+            t = Task(fn=f, wakaq=self, queue=queue)
+            if t.name in self.tasks:
+                raise Exception(f"Duplicate task name: {t.name}")
+            self.tasks[t.name] = t
+            return t.fn
+
+        return wrap(fn) if fn else wrap
 
     def _validate_queue_names(self, queue_names: list) -> list:
         try:
