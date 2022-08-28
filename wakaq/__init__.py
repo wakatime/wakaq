@@ -121,9 +121,7 @@ class WakaQ:
         )
         self.broker.rpush(queue.broker_key, payload)
 
-    def _enqueue_with_eta(
-        self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta
-    ):
+    def _enqueue_with_eta(self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta):
         queue = self._queue_or_default(queue)
         payload = serialize(
             {

@@ -18,11 +18,7 @@ from .utils import (
 
 @click.command()
 @click.option("--app", required=True, help="Import path of the WakaQ instance.")
-@click.option(
-    "--foreground",
-    is_flag=True,
-    help="Run in foreground; Default is to run as daemon in background.",
-)
+@click.option("--foreground", is_flag=True, help="Run in foreground; Default is to run as daemon in background.")
 def worker(**options):
     """Run worker(s) to process tasks from queue(s) defined in your app."""
     wakaq = import_app(options.pop("app"))
@@ -32,11 +28,7 @@ def worker(**options):
 
 @click.command()
 @click.option("--app", required=True, help="Import path of the WakaQ instance.")
-@click.option(
-    "--foreground",
-    is_flag=True,
-    help="Run in foreground; Default is to run as daemon in background.",
-)
+@click.option("--foreground", is_flag=True, help="Run in foreground; Default is to run as daemon in background.")
 def scheduler(**options):
     """Run a scheduler to enqueue periodic tasks based on a schedule defined in your app."""
     wakaq = import_app(options.pop("app"))

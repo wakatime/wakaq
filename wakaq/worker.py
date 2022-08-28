@@ -77,9 +77,7 @@ class Worker:
         while not self._stop_processing:
 
             # listen for broadcast tasks
-            msg = pubsub.get_message(
-                ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout
-            )
+            msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
             if msg:
                 payload = msg["data"]
                 payload = deserialize(payload)
@@ -197,14 +195,8 @@ class Worker:
                 runtime = time.time() - child.last_ping
                 if self.wakaq.hard_timeout and runtime > self.wakaq.hard_timeout:
                     os.kill(child.pid, signal.SIGKILL)
-                elif (
-                    not child.soft_timeout_reached
-                    and self.wakaq.soft_timeout
-                    and runtime > self.wakaq.soft_timeout
-                ):
-                    child.soft_timeout_reached = (
-                        True  # prevent raising SoftTimeout twice for same child
-                    )
+                elif not child.soft_timeout_reached and self.wakaq.soft_timeout and runtime > self.wakaq.soft_timeout:
+                    child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
                     os.kill(child.pid, signal.SIGQUIT)
 
     def _refork_missing_children(self):

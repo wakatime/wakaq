@@ -17,13 +17,9 @@ class CronTask:
         "kwargs",
     ]
 
-    def __init__(
-        self, schedule=None, task_name=None, queue_name=None, args=None, kwargs=None
-    ):
+    def __init__(self, schedule=None, task_name=None, queue_name=None, args=None, kwargs=None):
         if not croniter.is_valid(schedule):
-            raise Exception(
-                f"Invalid cron schedule (min hour dom month dow): {schedule}"
-            )
+            raise Exception(f"Invalid cron schedule (min hour dom month dow): {schedule}")
 
         self.schedule = schedule
         self.task_name = task_name
@@ -39,11 +35,7 @@ class CronTask:
     @classmethod
     def create(cls, obj, queues_by_name=None):
         if isinstance(obj, cls):
-            if (
-                queues_by_name is not None
-                and obj.queue_name
-                and obj.queue_name not in queues_by_name
-            ):
+            if queues_by_name is not None and obj.queue_name and obj.queue_name not in queues_by_name:
                 raise Exception(f"Unknown queue: {obj.queue_name}")
             return obj
         elif isinstance(obj, (list, tuple)) and len(obj) == 4:
@@ -67,9 +59,7 @@ class Scheduler:
 
         self.schedules = []
         for schedule in self.wakaq.schedules:
-            self.schedules.append(
-                CronTask.create(schedule, queues_by_name=self.wakaq.queues_by_name)
-            )
+            self.schedules.append(CronTask.create(schedule, queues_by_name=self.wakaq.queues_by_name))
 
         if foreground:
             self._run()
@@ -95,10 +85,7 @@ class Scheduler:
                     self.wakaq.broker.lpush(queue.broker_key, cron_task.payload)
 
             upcoming_tasks = []
-            crons = [
-                (croniter(x.schedule, base).get_next(datetime), x)
-                for x in self.schedules
-            ]
+            crons = [(croniter(x.schedule, base).get_next(datetime), x) for x in self.schedules]
             sleep_until = base + timedelta(days=1)
 
             for dt, cron_task in crons:
