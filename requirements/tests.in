@@ -2,6 +2,7 @@ blinker
 click
 croniter
 isort
+psutil
 pytest
 pytest-cov
 python-daemon

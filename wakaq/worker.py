@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
+import math
 import os
+import random
 import signal
 import time
 
 import daemon
+import psutil
 
 from .exceptions import SoftTimeout
 from .serializer import deserialize
@@ -38,6 +41,7 @@ class Worker:
         "wakaq",
         "children",
         "_stop_processing",
+        "_max_mem_reached_at",
         "_pubsub",
         "_write_fd",
     ]
@@ -61,6 +65,7 @@ class Worker:
     def _run(self):
         self.children = []
         self._stop_processing = False
+        self._max_mem_reached_at = 0
 
         pid = None
         for i in range(self.wakaq.concurrency):
@@ -88,6 +93,7 @@ class Worker:
         self._pubsub.subscribe(self.wakaq.broadcast_key)
 
         while not self._stop_processing:
+            self._check_max_mem_percent()
             self._enqueue_ready_eta_tasks()
             self._check_child_runtimes()
             self._listen_for_broadcast_task()
@@ -175,6 +181,22 @@ class Worker:
             task = self.wakaq.tasks[payload["name"]]
             task.fn(*payload["args"], **payload["kwargs"])
         os.write(self._write_fd, b".")
+
+    def _check_max_mem_percent(self):
+        if not self.wakaq.max_mem_percent:
+            return
+        task_timeout = self.wakaq.hard_timeout or self.wakaq.soft_timeout or 120
+        if time.time() - self._max_mem_reached_at < task_timeout:
+            return
+        if len(self.children) == 0:
+            return
+        percent_used = int(math.ceil(psutil.virtual_memory().percent))
+        if percent_used < self.wakaq.max_mem_percent:
+            return
+        self._max_mem_reached_at = time.time()
+        child = random.choice(self.children)  # TODO: pick child with largest memory footprint
+        child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
+        kill(child.pid, signal.SIGQUIT)
 
     def _check_child_runtimes(self):
         for child in self.children:

@@ -27,6 +27,8 @@ class WakaQ:
     schedules = []
     exclude_queues = []
     wait_timeout = None
+    max_mem_percent = None
+    max_tasks_per_worker = None
 
     eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
@@ -41,6 +43,8 @@ class WakaQ:
         exclude_queues=[],
         soft_timeout=None,
         hard_timeout=None,
+        max_mem_percent=None,
+        max_tasks_per_worker=None,
         socket_timeout=15,
         socket_connect_timeout=15,
         health_check_interval=30,
@@ -70,6 +74,16 @@ class WakaQ:
             raise Exception(
                 f"Hard timeout ({hard_timeout}) can not be less than or equal to soft timeout ({soft_timeout})."
             )
+
+        if self.max_mem_percent:
+            self.max_mem_percent = int(max_mem_percent)
+            if self.max_mem_percent < 1 or self.max_mem_percent > 99:
+                raise Exception(f"Max memory percent must be between 1 and 99: {self.max_mem_percent}")
+        else:
+            self.max_mem_percent = None
+
+        self.max_tasks_per_worker = abs(int(max_tasks_per_worker)) if max_tasks_per_worker else None
+
         self.tasks = {}
         self.broker = redis.Redis(
             host=host,

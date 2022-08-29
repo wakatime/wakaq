@@ -23,7 +23,7 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 * [ ] error exception handlers (maybe skip this because logging captures it)
 * [ ] signals
 * [ ] pre_fork(parent only) and post_fork(children only) hooks/signals
-* [ ] combat memory leaks with `max_mem_per_worker` and `max_tasks_per_worker` which re-fork worker child processes
+* [ ] combat memory leaks with `max_mem_percent` and `max_tasks_per_worker` which re-fork worker child processes
 
 ## Example
 
