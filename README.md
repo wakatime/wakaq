@@ -37,6 +37,7 @@ from datetime import timedelta
 wakaq = WakaQ(
 
     # List your queues and their priorities.
+    # Queues can be defined as Queue instances, tuples, or just a str.
     queues=[
         (0, 'a-high-priority-queue'),
         (1, 'a-medium-priority-queue'),
