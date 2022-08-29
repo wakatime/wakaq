@@ -53,9 +53,9 @@ class WakaQ:
         self.schedules = [CronTask.create(x) for x in schedules]
         self.concurrency = abs(int(concurrency)) or multiprocessing.cpu_count()
         self.exclude_queues = self._validate_queue_names(exclude_queues)
-        self.soft_timeout = soft_timeout
-        self.hard_timeout = hard_timeout
-        self.wait_timeout = wait_timeout
+        self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
+        self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
+        self.wait_timeout = wait_timeout.total_seconds() if isinstance(wait_timeout, timedelta) else wait_timeout
         if soft_timeout and int(soft_timeout) <= int(wait_timeout):
             raise Exception(
                 f"Soft timeout ({soft_timeout}) can not be less than or equal to wait timeout ({wait_timeout})."

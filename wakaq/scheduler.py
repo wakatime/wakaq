@@ -13,18 +13,18 @@ class CronTask:
     __slots__ = [
         "schedule",
         "task_name",
-        "queue_name",
+        "queue",
         "args",
         "kwargs",
     ]
 
-    def __init__(self, schedule=None, task_name=None, queue_name=None, args=None, kwargs=None):
+    def __init__(self, schedule=None, task_name=None, queue=None, args=None, kwargs=None):
         if not croniter.is_valid(schedule):
             raise Exception(f"Invalid cron schedule (min hour dom month dow): {schedule}")
 
         self.schedule = schedule
         self.task_name = task_name
-        self.queue_name = queue_name
+        self.queue = queue
         self.payload = serialize(
             {
                 "name": task_name,
@@ -36,8 +36,8 @@ class CronTask:
     @classmethod
     def create(cls, obj, queues_by_name=None):
         if isinstance(obj, cls):
-            if queues_by_name is not None and obj.queue_name and obj.queue_name not in queues_by_name:
-                raise Exception(f"Unknown queue: {obj.queue_name}")
+            if queues_by_name is not None and obj.queue and obj.queue not in queues_by_name:
+                raise Exception(f"Unknown queue: {obj.queue}")
             return obj
         elif isinstance(obj, (list, tuple)) and len(obj) == 4:
             return cls(schedule=obj[0], task_name=obj[1], args=obj[2], kwargs=obj[3])
@@ -77,8 +77,8 @@ class Scheduler:
             if len(upcoming_tasks) > 0:
                 for cron_task in upcoming_tasks:
                     task = self.wakaq.tasks[cron_task.task_name]
-                    if cron_task.queue_name:
-                        queue = self.wakaq.queues_by_name[cron_task.queue_name]
+                    if cron_task.queue:
+                        queue = self.wakaq.queues_by_name[cron_task.queue]
                     elif task.queue:
                         queue = task.queue
                     else:

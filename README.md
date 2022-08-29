@@ -26,7 +26,8 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 ## Example
 
 ```python
-from wakaq import WakaQ
+from wakaq import WakaQ, Queue, CronTask
+from datetime import timedelta
 
 
 wakaq = WakaQ(
@@ -34,6 +35,14 @@ wakaq = WakaQ(
         (0, 'a-high-priority-queue'),
         (1, 'a-medium-priority-queue'),
         (2, 'a-low-priority-queue'),
+        'default-high-priority-queue',
+        Queue('another-queue', priority=3),
+    ],
+    soft_timeout=timedelta(minutes=5),
+    hard_timeout=6,  # seconds
+    schedules=[
+        CronTask('*/10 * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
+        ('* * * * *', 'mytask', [1, 1], {}),
     ],
 )
 
