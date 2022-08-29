@@ -41,8 +41,8 @@ wakaq = WakaQ(
     soft_timeout=timedelta(minutes=5),
     hard_timeout=6,  # seconds
     schedules=[
-        CronTask('*/10 * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
-        ('* * * * *', 'mytask', [1, 1], {}),
+        CronTask('* * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
+        ('*/10 * * * *', 'mytask', [1, 1], {}),
     ],
 )
 
