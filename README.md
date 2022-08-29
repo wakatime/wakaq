@@ -52,9 +52,16 @@ def mytask(x, y):
     print(x + y)
 
 
+@wakaq.task
+def anothertask(x, y):
+    print(x + y)
+
+
 if __name__ == '__main__':
-    # add 1 plus 1 on a worker somewhere, overwriting the default queue from medium to high
+    # add 1 plus 1 on a worker somewhere, overwriting the task's queue from medium to high
     mytask.delay(1, 1, queue='a-high-priority-queue')
+    # add 1 plus 1 on a worker somewhere, running on the default lowest priority queue
+    anothertask.delay(1, 1)
 ```
 
 
