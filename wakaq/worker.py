@@ -45,6 +45,7 @@ class Worker:
         "_max_mem_reached_at",
         "_pubsub",
         "_write_fd",
+        "_num_tasks_processed",
     ]
 
     def __init__(self, wakaq=None):
@@ -123,6 +124,7 @@ class Worker:
         # redis should eventually detect pid change and reset, but we force it
         self.wakaq.broker.connection_pool.reset()
 
+        self._num_tasks_processed = 0
         while not self._stop_processing:
             self._execute_next_task_from_queue()
 
@@ -175,12 +177,15 @@ class Worker:
             self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
 
     def _execute_next_task_from_queue(self):
-        print("Checking for tasks...")
         payload = self.wakaq._blocking_dequeue()
         if payload is not None:
-            print(f"got task: {payload}")
+            # print(f"got task: {payload}")
             task = self.wakaq.tasks[payload["name"]]
             task.fn(*payload["args"], **payload["kwargs"])
+            self._num_tasks_processed += 1
+            if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
+                # print(f'Restarting child worker after {self._num_tasks_processed} tasks')
+                self._stop_processing = True
         os.write(self._write_fd, b".")
 
     def _check_max_mem_percent(self):

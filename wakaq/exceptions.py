@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
-class WakaQException(Exception):
+class WakaQError(Exception):
     pass
 
 
-class SoftTimeout(WakaQException):
-    pass
-
-
-class ReloadWorkerChild(WakaQException):
+class SoftTimeout(WakaQError):
     pass
