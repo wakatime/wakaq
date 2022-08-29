@@ -14,6 +14,7 @@ from .exceptions import SoftTimeout
 from .serializer import deserialize
 from .utils import kill, read_fd
 
+
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
 redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -194,9 +195,15 @@ class Worker:
         if percent_used < self.wakaq.max_mem_percent:
             return
         self._max_mem_reached_at = time.time()
-        child = random.choice(self.children)  # TODO: pick child with largest memory footprint
+        child = self._child_using_most_mem()
         child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
         kill(child.pid, signal.SIGQUIT)
+
+    def _child_using_most_mem(self):
+        try:
+            return max(self.children, lambda c: psutil.Process(c.pid).memory_percent())
+        except:
+            return random.choice(self.children)
 
     def _check_child_runtimes(self):
         for child in self.children:
