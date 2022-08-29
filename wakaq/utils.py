@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+import os
 from importlib import import_module
 
 
@@ -53,3 +54,18 @@ def pending_eta_tasks(app) -> int:
 
 def purge_eta_tasks(app):
     app.broker.delete(app.eta_task_key)
+
+
+def kill(pid, signum):
+    try:
+        os.kill(pid, signum)
+    except IOError:
+        pass
+
+
+def read_fd(fd):
+    try:
+        os.set_blocking(fd, False)
+        return os.read(fd, 64000)
+    except OSError:
+        return b""

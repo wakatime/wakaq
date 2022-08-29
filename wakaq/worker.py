@@ -9,6 +9,7 @@ import daemon
 
 from .exceptions import SoftTimeout
 from .serializer import deserialize
+from .utils import kill, read_fd
 
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -55,7 +56,7 @@ class Worker:
     def _stop(self):
         self._stop_processing = True
         for child in self.children:
-            os.kill(child.pid, signal.SIGTERM)
+            kill(child.pid, signal.SIGTERM)
 
     def _run(self):
         self.children = []
@@ -125,7 +126,10 @@ class Worker:
         i = 0
         for c in self.children:
             if child.pid == c.pid:
-                os.close(child.fd)
+                try:
+                    os.close(child.fd)
+                except:
+                    pass
                 del self.children[i]
                 break
             i += 1
@@ -174,21 +178,17 @@ class Worker:
 
     def _check_child_runtimes(self):
         for child in self.children:
-            try:
-                os.set_blocking(child.fd, False)
-                ping = os.read(child.fd, 64000)
-            except OSError:
-                ping = b""
+            ping = read_fd(child.fd)
             if ping != b"":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
             elif self.wakaq.soft_timeout or self.wakaq.hard_timeout:
                 runtime = time.time() - child.last_ping
                 if self.wakaq.hard_timeout and runtime > self.wakaq.hard_timeout:
-                    os.kill(child.pid, signal.SIGKILL)
+                    kill(child.pid, signal.SIGKILL)
                 elif not child.soft_timeout_reached and self.wakaq.soft_timeout and runtime > self.wakaq.soft_timeout:
                     child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
-                    os.kill(child.pid, signal.SIGQUIT)
+                    kill(child.pid, signal.SIGQUIT)
 
     def _listen_for_broadcast_task(self):
         msg = self._pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
