@@ -38,8 +38,8 @@ wakaq = WakaQ(
         'default-lowest-priority-queue',
         Queue('another-queue', priority=3),
     ],
-    soft_timeout=timedelta(minutes=5),
-    hard_timeout=6,  # seconds
+    soft_timeout=30,  # seconds
+    hard_timeout=timedelta(minutes=1),
     schedules=[
         CronTask('* * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
         ('*/10 * * * *', 'mytask', [1, 1], {}),  # runs on default lowest priority queue
