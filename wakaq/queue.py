@@ -11,9 +11,12 @@ class Queue:
         "prefix",
     ]
 
-    def __init__(self, name=None, priority=0, prefix=None):
+    def __init__(self, name=None, priority=-1, prefix=None):
         self.name = name
-        self.priority = abs(int(priority))
+        try:
+            self.priority = int(priority)
+        except:
+            raise Exception(f"Invalid queue priority: {priority}")
         self.prefix = re.sub(r"[^a-zA-Z]", "", prefix or "wakaq")
 
     @classmethod

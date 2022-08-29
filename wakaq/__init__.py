@@ -47,6 +47,8 @@ class WakaQ:
         wait_timeout=1,
     ):
         self.queues = [Queue.create(x) for x in queues]
+        lowest_priority = max(self.queues, lambda q: q.priority)
+        self.queues = map(self.queues, lambda q: self._default_priority(q, lowest_priority))
         self.queues.sort(key=lambda q: q.priority)
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
         self.broker_keys = [x.broker_key for x in self.queues]
@@ -156,3 +158,8 @@ class WakaQ:
 
         # return lowest priority queue by default
         return self.queues[-1]
+
+    def _default_priority(self, queue, lowest_priority):
+        if queue.priority < 0:
+            queue.priority = lowest_priority + 1
+        return queue

@@ -35,26 +35,26 @@ wakaq = WakaQ(
         (0, 'a-high-priority-queue'),
         (1, 'a-medium-priority-queue'),
         (2, 'a-low-priority-queue'),
-        'default-high-priority-queue',
+        'default-lowest-priority-queue',
         Queue('another-queue', priority=3),
     ],
     soft_timeout=timedelta(minutes=5),
     hard_timeout=6,  # seconds
     schedules=[
         CronTask('* * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
-        ('*/10 * * * *', 'mytask', [1, 1], {}),
+        ('*/10 * * * *', 'mytask', [1, 1], {}),  # runs on default lowest priority queue
     ],
 )
 
 
-@wakaq.task(queue='medium-priority-queue')
+@wakaq.task(queue='a-medium-priority-queue')
 def mytask(x, y):
     print(x + y)
 
 
 if __name__ == '__main__':
     # add 1 plus 1 on a worker somewhere, overwriting the default queue from medium to high
-    mytask.delay(1, 1, queue='high-priority-queue')
+    mytask.delay(1, 1, queue='a-high-priority-queue')
 ```
 
 
