@@ -8,8 +8,7 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 * Scheduled periodic tasks
 * [Broadcast][broadcast] a task to all workers
 * Task [soft][soft timeout] and [hard][hard timeout] timeout limits
-* Combat memory leaks by reloading the worker using most RAM, when machine RAM usage at `max_mem_percent`
-* Combat memory leaks by reloading workers after `max_tasks_per_worker` processed
+* Combat memory leaks with `max_mem_percent` or `max_tasks_per_worker`
 * Super minimal
 
 Want more features like rate limiting, task deduplication, etc? Too bad, feature PRs are not accepted. Maximal features belong in your app’s worker tasks.
