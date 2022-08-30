@@ -71,17 +71,18 @@ class WakaQ:
         self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
         self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
         self.wait_timeout = wait_timeout.total_seconds() if isinstance(wait_timeout, timedelta) else wait_timeout
-        if soft_timeout and int(soft_timeout) <= int(wait_timeout):
+
+        if self.soft_timeout and self.soft_timeout <= wait_timeout:
             raise Exception(
-                f"Soft timeout ({soft_timeout}) can not be less than or equal to wait timeout ({wait_timeout})."
+                f"Soft timeout ({self.soft_timeout}) can not be less than or equal to wait timeout ({self.wait_timeout})."
             )
-        if hard_timeout and int(hard_timeout) <= int(wait_timeout):
+        if self.hard_timeout and self.hard_timeout <= self.wait_timeout:
             raise Exception(
-                f"Hard timeout ({hard_timeout}) can not be less than or equal to wait timeout ({wait_timeout})."
+                f"Hard timeout ({self.hard_timeout}) can not be less than or equal to wait timeout ({self.wait_timeout})."
             )
-        if soft_timeout and hard_timeout and int(hard_timeout) <= int(soft_timeout):
+        if self.soft_timeout and self.hard_timeout and self.hard_timeout <= self.soft_timeout:
             raise Exception(
-                f"Hard timeout ({hard_timeout}) can not be less than or equal to soft timeout ({soft_timeout})."
+                f"Hard timeout ({self.hard_timeout}) can not be less than or equal to soft timeout ({self.soft_timeout})."
             )
 
         if self.max_mem_percent:
