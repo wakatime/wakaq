@@ -72,7 +72,7 @@ def read_fd(fd):
 
 
 class Context:
-    __slots__ = ['value']
+    __slots__ = ["value"]
 
     def __init__(self):
         self.value = None

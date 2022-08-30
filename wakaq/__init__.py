@@ -2,8 +2,8 @@
 
 
 import calendar
-import multiprocessing
 import logging
+import multiprocessing
 from datetime import datetime, timedelta
 
 import redis
@@ -35,8 +35,8 @@ class WakaQ:
 
     eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
-    log_format = '[%(asctime)s] %(levelname)s: %(message)s'
-    task_log_format = '[%(asctime)s] %(levelname)s in %(task)s: %(message)s'
+    log_format = "[%(asctime)s] %(levelname)s: %(message)s"
+    task_log_format = "[%(asctime)s] %(levelname)s in %(task)s: %(message)s"
 
     def __init__(
         self,

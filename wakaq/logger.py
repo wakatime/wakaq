@@ -2,7 +2,8 @@
 
 
 import sys
-from logging import getLogger, captureWarnings, StreamHandler, Formatter as FormatterBase
+from logging import Formatter as FormatterBase
+from logging import StreamHandler, captureWarnings, getLogger
 from logging.handlers import WatchedFileHandler
 
 from .utils import current_task
@@ -22,7 +23,7 @@ class Formatter(FormatterBase):
         else:
             self._fmt = self.wakaq.log_format
             self._style._fmt = self.wakaq.log_format
-            record.__dict__.setdefault('task', None)
+            record.__dict__.setdefault("task", None)
         return super().format(record)
 
 
@@ -30,12 +31,12 @@ class Logger:
     def __init__(self, wakaq):
         self.wakaq = wakaq
         captureWarnings(True)
-        handler = WatchedFileHandler(wakaq.log_file, encoding='utf-8')
+        handler = WatchedFileHandler(wakaq.log_file, encoding="utf-8")
         handler.setFormatter(Formatter(format))
 
 
 def setup_logging(wakaq, is_child=None):
-    logger = getLogger('wakaq')
+    logger = getLogger("wakaq")
 
     for handler in logger.handlers:
         logger.removeHandler(handler)

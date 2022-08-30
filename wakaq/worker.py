@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 
 
+import logging
 import math
 import os
 import random
 import signal
 import sys
 import time
-import logging
 
 import daemon
 import psutil
 
 from .exceptions import SoftTimeout
+from .logger import setup_logging
 from .serializer import deserialize
 from .utils import current_task, kill, read_fd
-from .logger import setup_logging
-
 
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -25,7 +24,7 @@ return results
 """
 
 
-log = logging.getLogger('wakaq')
+log = logging.getLogger("wakaq")
 
 
 class Child:
@@ -239,15 +238,15 @@ class Worker:
             current_task.set(None)
             self._num_tasks_processed += 1
             if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
-                log.debug(f'restarting child worker after {self._num_tasks_processed} tasks')
+                log.debug(f"restarting child worker after {self._num_tasks_processed} tasks")
                 self._stop_processing = True
         os.write(self._pingout, b".")
 
     def _read_child_logs(self):
         for child in self.children:
             logs = read_fd(child.stdin)
-            if logs != b'':
-                log.handlers[0].stream.write(logs.decode('utf8'))
+            if logs != b"":
+                log.handlers[0].stream.write(logs.decode("utf8"))
 
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
