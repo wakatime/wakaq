@@ -69,3 +69,19 @@ def read_fd(fd):
         return os.read(fd, 64000)
     except OSError:
         return b""
+
+
+class Context:
+    __slots__ = ['value']
+
+    def __init__(self):
+        self.value = None
+
+    def get(self):
+        return self.value
+
+    def set(self, val):
+        self.value = val
+
+
+current_task = Context()

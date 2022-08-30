@@ -5,14 +5,17 @@ import math
 import os
 import random
 import signal
+import sys
 import time
+import logging
 
 import daemon
 import psutil
 
 from .exceptions import SoftTimeout
 from .serializer import deserialize
-from .utils import kill, read_fd
+from .utils import current_task, kill, read_fd
+from .logger import setup_logging
 
 
 ZRANGEPOP = """
@@ -22,19 +25,36 @@ return results
 """
 
 
+log = logging.getLogger('wakaq')
+
+
 class Child:
     __slots__ = [
         "pid",
-        "fd",
+        "pingin",
+        "stdin",
         "last_ping",
         "soft_timeout_reached",
+        "done",
     ]
 
-    def __init__(self, pid, fd):
+    def __init__(self, pid, pingin, stdin):
         self.pid = pid
-        self.fd = fd
+        self.pingin = pingin
+        self.stdin = stdin
         self.soft_timeout_reached = False
         self.last_ping = time.time()
+        self.done = False
+
+    def close(self):
+        try:
+            os.close(self.pingin)
+        except:
+            pass
+        try:
+            os.close(self.stdin)
+        except:
+            pass
 
 
 class Worker:
@@ -44,7 +64,8 @@ class Worker:
         "_stop_processing",
         "_max_mem_reached_at",
         "_pubsub",
-        "_write_fd",
+        "_pingout",
+        "_stdout",
         "_num_tasks_processed",
     ]
 
@@ -68,6 +89,7 @@ class Worker:
         self.children = []
         self._stop_processing = False
         self._max_mem_reached_at = 0
+        setup_logging(self.wakaq)
 
         pid = None
         for i in range(self.wakaq.concurrency):
@@ -79,13 +101,17 @@ class Worker:
             self._parent()
 
     def _fork(self) -> int:
-        r, w = os.pipe()
+        pingin, pingout = os.pipe()
+        stdin, stdout = os.pipe()
         pid = os.fork()
         if pid == 0:
-            os.close(r)
-            self._child(w)
+            os.close(pingin)
+            os.close(stdin)
+            self._child(pingout, stdout)
         else:
-            self._add_child(pid, r)
+            os.close(pingout)
+            os.close(stdout)
+            self._add_child(pid, pingin, stdin)
         return pid
 
     def _parent(self):
@@ -97,19 +123,28 @@ class Worker:
         self._pubsub.subscribe(self.wakaq.broadcast_key)
 
         while not self._stop_processing:
+            self._read_child_logs()
             self._check_max_mem_percent()
             self._enqueue_ready_eta_tasks()
+            self._cleanup_children()
             self._check_child_runtimes()
             self._listen_for_broadcast_task()
 
         if self._stop_processing:
+            if len(self.children) > 0:
+                log.info("shutting down...")
             while len(self.children) > 0:
-                print("shutting down...")
+                self._cleanup_children()
                 self._check_child_runtimes()
-                time.sleep(1)
+                time.sleep(0.05)
 
-    def _child(self, fd):
-        self._write_fd = fd
+    def _child(self, pingout, stdout):
+        self._pingout = pingout
+        self._stdout = stdout
+
+        fh = os.fdopen(stdout, "w")
+        sys.stdout = fh
+        sys.stderr = fh
 
         # ignore ctrl-c sent to process group from terminal
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -123,27 +158,43 @@ class Worker:
         # raise SoftTimeout
         signal.signal(signal.SIGQUIT, self._on_soft_timeout_child)
 
+        setup_logging(self.wakaq, is_child=True)
+
         # redis should eventually detect pid change and reset, but we force it
         self.wakaq.broker.connection_pool.reset()
 
-        self._num_tasks_processed = 0
-        while not self._stop_processing:
-            self._execute_next_task_from_queue()
+        # cleanup file descriptors opened by parent process
+        self._remove_all_children()
 
-    def _add_child(self, pid, fd):
-        self.children.append(Child(pid, fd))
+        log.debug("starting child worker process")
+
+        try:
+            self._num_tasks_processed = 0
+            while not self._stop_processing:
+                self._execute_next_task_from_queue()
+
+        finally:
+            for handler in log.handlers:
+                handler.flush()
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
+            fh.close()
+
+    def _add_child(self, pid, pingin, stdin):
+        self.children.append(Child(pid, pingin, stdin))
+
+    def _remove_all_children(self):
+        for child in self.children:
+            self._remove_child(child)
+
+    def _cleanup_children(self):
+        for child in self.children:
+            if child.done:
+                self._remove_child(child)
 
     def _remove_child(self, child):
-        i = 0
-        for c in self.children:
-            if child.pid == c.pid:
-                try:
-                    os.close(child.fd)
-                except:
-                    pass
-                del self.children[i]
-                break
-            i += 1
+        child.close()
+        self.children = [c for c in self.children if c.pid != child.pid]
 
     def _on_exit_parent(self, signum, frame):
         self._stop()
@@ -160,11 +211,11 @@ class Worker:
             try:
                 pid, _ = os.waitpid(child.pid, os.WNOHANG)
                 if pid != 0:  # child exited
-                    self._remove_child(child)
+                    child.done = True
             except InterruptedError:  # child exited while calling os.waitpid
-                self._remove_child(child)
+                child.done = True
             except ChildProcessError:  # child pid no longer valid
-                self._remove_child(child)
+                child.done = True
         self._refork_missing_children()
 
     def _enqueue_ready_eta_tasks(self):
@@ -181,14 +232,22 @@ class Worker:
     def _execute_next_task_from_queue(self):
         payload = self.wakaq._blocking_dequeue()
         if payload is not None:
-            # print(f"got task: {payload}")
             task = self.wakaq.tasks[payload["name"]]
+            current_task.set(task)
+            log.debug(f"running with payload {payload}")
             task.fn(*payload["args"], **payload["kwargs"])
+            current_task.set(None)
             self._num_tasks_processed += 1
             if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
-                # print(f'Restarting child worker after {self._num_tasks_processed} tasks')
+                log.debug(f'restarting child worker after {self._num_tasks_processed} tasks')
                 self._stop_processing = True
-        os.write(self._write_fd, b".")
+        os.write(self._pingout, b".")
+
+    def _read_child_logs(self):
+        for child in self.children:
+            logs = read_fd(child.stdin)
+            if logs != b'':
+                log.handlers[0].stream.write(logs.decode('utf8'))
 
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
@@ -214,7 +273,7 @@ class Worker:
 
     def _check_child_runtimes(self):
         for child in self.children:
-            ping = read_fd(child.fd)
+            ping = read_fd(child.pingin)
             if ping != b"":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False

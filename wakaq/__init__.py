@@ -3,6 +3,7 @@
 
 import calendar
 import multiprocessing
+import logging
 from datetime import datetime, timedelta
 
 import redis
@@ -29,9 +30,13 @@ class WakaQ:
     wait_timeout = None
     max_mem_percent = None
     max_tasks_per_worker = None
+    log_file = None
+    log_level = None
 
     eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
+    log_format = '[%(asctime)s] %(levelname)s: %(message)s'
+    task_log_format = '[%(asctime)s] %(levelname)s in %(task)s: %(message)s'
 
     def __init__(
         self,
@@ -45,14 +50,16 @@ class WakaQ:
         hard_timeout=None,
         max_mem_percent=None,
         max_tasks_per_worker=None,
+        log_file=None,
+        log_level=None,
         socket_timeout=15,
         socket_connect_timeout=15,
         health_check_interval=30,
         wait_timeout=1,
     ):
         self.queues = [Queue.create(x) for x in queues]
-        lowest_priority = max(self.queues, lambda q: q.priority)
-        self.queues = map(self.queues, lambda q: self._default_priority(q, lowest_priority))
+        lowest_priority = max(self.queues, key=lambda q: q.priority)
+        self.queues = list(map(lambda q: self._default_priority(q, lowest_priority.priority), self.queues))
         self.queues.sort(key=lambda q: q.priority)
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
         self.broker_keys = [x.broker_key for x in self.queues]
@@ -83,6 +90,8 @@ class WakaQ:
             self.max_mem_percent = None
 
         self.max_tasks_per_worker = abs(int(max_tasks_per_worker)) if max_tasks_per_worker else None
+        self.log_file = log_file if isinstance(log_file, str) else None
+        self.log_level = log_level if isinstance(log_level, int) else logging.DEBUG
 
         self.tasks = {}
         self.broker = redis.Redis(

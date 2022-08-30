@@ -21,9 +21,8 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 * [x] handle child process crash/exception and re-fork
 * [x] timeouts
 * [x] combat memory leaks with `max_mem_percent` and `max_tasks_per_worker`
-* [ ] logging
+* [x] logging
 * [ ] error exception handlers (maybe skip this because logging captures it)
-* [ ] signals
 * [ ] pre_fork(parent only) and post_fork(children only) hooks/signals
 
 ## Example

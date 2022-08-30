@@ -25,13 +25,6 @@ class CronTask:
         self.schedule = schedule
         self.task_name = task_name
         self.queue = queue
-        self.payload = serialize(
-            {
-                "name": task_name,
-                "args": args,
-                "kwargs": kwargs,
-            }
-        )
 
     @classmethod
     def create(cls, obj, queues_by_name=None):
@@ -43,6 +36,16 @@ class CronTask:
             return cls(schedule=obj[0], task_name=obj[1], args=obj[2], kwargs=obj[3])
         else:
             raise Exception(f"Invalid schedule: {obj}")
+
+    @property
+    def payload(self):
+        return serialize(
+            {
+                "name": self.task_name,
+                "args": self.args,
+                "kwargs": self.kwargs,
+            }
+        )
 
 
 class Scheduler:
