@@ -72,6 +72,8 @@ class Worker:
         pid = None
         for i in range(self.wakaq.concurrency):
             pid = self._fork()
+            if pid == 0:
+                break
 
         if pid != 0:  # parent
             self._parent()
