@@ -13,18 +13,6 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 
 Want more features like rate limiting, task deduplication, etc? Too bad, feature PRs are not accepted. Maximal features belong in your app’s worker tasks.
 
-## ToDo
-
-* [x] scheduler
-* [x] admin info inspection, purging queues, etc
-* [x] broadcast task
-* [x] handle child process crash/exception and re-fork
-* [x] timeouts
-* [x] combat memory leaks with `max_mem_percent` and `max_tasks_per_worker`
-* [x] logging
-* [ ] error exception handlers (maybe skip this because logging captures it)
-* [ ] pre_fork(parent only) and post_fork(children only) hooks/signals
-
 ## Example
 
 ```python
