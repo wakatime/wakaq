@@ -127,6 +127,7 @@ class Worker:
         while not self._stop_processing:
             self._read_child_logs()
             self._check_max_mem_percent()
+            self._refork_missing_children()
             self._enqueue_ready_eta_tasks()
             self._cleanup_children()
             self._check_child_runtimes()
@@ -223,7 +224,6 @@ class Worker:
                 child.done = True
             except ChildProcessError:  # child pid no longer valid
                 child.done = True
-        self._refork_missing_children()
 
     def _enqueue_ready_eta_tasks(self):
         script = self.wakaq.broker.register_script(ZRANGEPOP)
@@ -307,4 +307,5 @@ class Worker:
         if self._stop_processing:
             return
         for i in range(self.wakaq.concurrency - len(self.children)):
+            log.debug("restarting a crashed worker")
             self._fork()
