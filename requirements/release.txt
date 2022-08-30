@@ -1,4 +1,3 @@
-blinker
 click
 croniter
 pytest
