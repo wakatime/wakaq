@@ -32,6 +32,7 @@ class WakaQ:
     max_tasks_per_worker = None
     log_file = None
     log_level = None
+    after_worker_startup = None
 
     eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
@@ -50,6 +51,7 @@ class WakaQ:
         hard_timeout=None,
         max_mem_percent=None,
         max_tasks_per_worker=None,
+        after_worker_startup=None,
         log_file=None,
         log_level=None,
         socket_timeout=15,
@@ -92,6 +94,10 @@ class WakaQ:
         self.max_tasks_per_worker = abs(int(max_tasks_per_worker)) if max_tasks_per_worker else None
         self.log_file = log_file if isinstance(log_file, str) else None
         self.log_level = log_level if isinstance(log_level, int) else logging.INFO
+
+        if after_worker_startup and not callable(after_worker_startup):
+            raise Exception("after_worker_startup must be a function")
+        self.after_worker_startup = after_worker_startup
 
         self.tasks = {}
         self.broker = redis.Redis(

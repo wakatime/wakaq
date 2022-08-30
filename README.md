@@ -50,7 +50,7 @@ wakaq = WakaQ(
     # SIGKILL a task if it runs longer than 1 minute.
     hard_timeout=timedelta(minutes=1),
 
-    # Combat memory leaks by reloading a child worker (the one using the most RAM),
+    # Combat memory leaks by reloading a worker (the one using the most RAM),
     # when the total machine RAM usage is at or greater than 98%.
     max_mem_percent=98,
 

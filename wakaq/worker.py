@@ -171,7 +171,9 @@ class Worker:
             # cleanup file descriptors opened by parent process
             self._remove_all_children()
 
-            log.debug("starting child worker process")
+            log.debug("started worker process")
+            if self.wakaq.after_worker_startup:
+                self.wakaq.after_worker_startup()
 
             self._num_tasks_processed = 0
             while not self._stop_processing:
@@ -246,7 +248,7 @@ class Worker:
             current_task.set(None)
             self._num_tasks_processed += 1
             if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
-                log.debug(f"restarting child worker after {self._num_tasks_processed} tasks")
+                log.debug(f"restarting worker after {self._num_tasks_processed} tasks")
                 self._stop_processing = True
         os.write(self._pingout, b".")
 
