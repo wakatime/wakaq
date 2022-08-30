@@ -2,10 +2,14 @@
 
 
 import os
+import sys
 from importlib import import_module
 
 
 def import_app(app):
+    cwd = os.getcwd()
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
     module_path, class_name = app.rsplit(".", 1)
     module = import_module(module_path)
     wakaq = getattr(module, class_name)
