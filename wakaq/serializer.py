@@ -3,7 +3,6 @@
 
 import math
 import re
-import time
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from json import JSONDecoder, JSONEncoder, dumps, loads
@@ -26,8 +25,6 @@ class CustomJSONEncoder(JSONEncoder):
             if o.tzinfo is not None:
                 o = o.astimezone(timezone.utc)
             return o.strftime("%Y-%m-%dT%H:%M:%SZ")
-        if isinstance(o, time):
-            return o.strftime("%I:%M%p").lstrip("0").lower()
         if isinstance(o, date):
             return o.strftime("%Y-%m-%d")
         if isinstance(o, timedelta):
