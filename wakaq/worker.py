@@ -72,6 +72,9 @@ class Worker:
         self.wakaq = wakaq
 
     def start(self, foreground=False):
+        setup_logging(self.wakaq)
+        log.info(f"starting {self.wakaq.concurrency} workers")
+
         if foreground:
             self._run()
             return
@@ -88,7 +91,6 @@ class Worker:
         self.children = []
         self._stop_processing = False
         self._max_mem_reached_at = 0
-        setup_logging(self.wakaq)
 
         pid = None
         for i in range(self.wakaq.concurrency):

@@ -91,7 +91,7 @@ class WakaQ:
 
         self.max_tasks_per_worker = abs(int(max_tasks_per_worker)) if max_tasks_per_worker else None
         self.log_file = log_file if isinstance(log_file, str) else None
-        self.log_level = log_level if isinstance(log_level, int) else logging.DEBUG
+        self.log_level = log_level if isinstance(log_level, int) else logging.INFO
 
         self.tasks = {}
         self.broker = redis.Redis(
