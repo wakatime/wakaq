@@ -153,7 +153,7 @@ class WakaQ:
         )
         self.broker.rpush(queue.broker_key, payload)
 
-    def _enqueue_with_eta(self, task_name: str, queue: str, args: list, kwargs: dict, eta: timedelta):
+    def _enqueue_with_eta(self, task_name: str, queue: str, args: list, kwargs: dict, eta):
         queue = self._queue_or_default(queue)
         payload = serialize(
             {
@@ -163,7 +163,9 @@ class WakaQ:
                 "queue": queue.name,
             }
         )
-        timestamp = calendar.timegm((datetime.utcnow() + eta).utctimetuple())
+        if isinstance(eta, timedelta):
+            eta = datetime.utcnow() + eta
+        timestamp = calendar.timegm(eta.utctimetuple())
         self.broker.zadd(self.eta_task_key, {payload: timestamp}, nx=True)
 
     def _broadcast(self, task_name: str, queue: str, args: list, kwargs: dict):
