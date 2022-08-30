@@ -8,6 +8,7 @@ import random
 import signal
 import sys
 import time
+import traceback
 
 import daemon
 import psutil
@@ -161,18 +162,23 @@ class Worker:
 
         setup_logging(self.wakaq, is_child=True)
 
-        # redis should eventually detect pid change and reset, but we force it
-        self.wakaq.broker.connection_pool.reset()
-
-        # cleanup file descriptors opened by parent process
-        self._remove_all_children()
-
-        log.debug("starting child worker process")
-
         try:
+
+            # redis should eventually detect pid change and reset, but we force it
+            self.wakaq.broker.connection_pool.reset()
+
+            # cleanup file descriptors opened by parent process
+            self._remove_all_children()
+
+            log.debug("starting child worker process")
+
             self._num_tasks_processed = 0
             while not self._stop_processing:
                 self._execute_next_task_from_queue()
+
+        except:
+            log.error(traceback.format_exc())
+            return
 
         finally:
             for handler in log.handlers:
