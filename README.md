@@ -13,6 +13,10 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 
 Want more features like rate limiting, task deduplication, etc? Too bad, feature PRs are not accepted. Maximal features belong in your app’s worker tasks.
 
+## Installing
+
+    pip install wakaq
+
 ## Example
 
 ```python

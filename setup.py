@@ -4,7 +4,7 @@ about = {}
 with open("wakaq/__about__.py") as f:
     exec(f.read(), about)
 
-install_requires = [x.strip() for x in open("requirements/release.txt").readlines()]
+install_requires = [x.strip() for x in open("requirements.txt").readlines()]
 
 setup(
     name=about["__title__"],
