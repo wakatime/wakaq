@@ -247,7 +247,10 @@ class Worker:
             task = self.wakaq.tasks[payload["name"]]
             current_task.set(task)
             log.debug(f"running with payload {payload}")
-            task.fn(*payload["args"], **payload["kwargs"])
+            try:
+                task.fn(*payload["args"], **payload["kwargs"])
+            except SoftTimeout:
+                log.error(traceback.format_exc())
             current_task.set(None)
             self._num_tasks_processed += 1
         os.write(self._pingout, b".")
