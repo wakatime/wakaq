@@ -119,6 +119,7 @@ class Worker:
         signal.signal(signal.SIGCHLD, self._on_child_exited)
         signal.signal(signal.SIGINT, self._on_exit_parent)
         signal.signal(signal.SIGTERM, self._on_exit_parent)
+        signal.signal(signal.SIGQUIT, self._on_exit_parent)
 
         self._pubsub = self.wakaq.broker.pubsub()
         self._pubsub.subscribe(self.wakaq.broadcast_key)
