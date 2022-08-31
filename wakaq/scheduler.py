@@ -57,7 +57,7 @@ class Scheduler:
     def __init__(self, wakaq=None):
         self.wakaq = wakaq
 
-    def start(self, foreground=False):
+    def start(self, background=False):
         if len(self.wakaq.schedules) == 0:
             raise Exception("No scheduled tasks found.")
 
@@ -65,11 +65,10 @@ class Scheduler:
         for schedule in self.wakaq.schedules:
             self.schedules.append(CronTask.create(schedule, queues_by_name=self.wakaq.queues_by_name))
 
-        if foreground:
-            self._run()
-            return
-
-        with daemon.DaemonContext():
+        if background:
+            with daemon.DaemonContext():
+                self._run()
+        else:
             self._run()
 
     def _run(self):

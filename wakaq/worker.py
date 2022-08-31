@@ -72,15 +72,14 @@ class Worker:
     def __init__(self, wakaq=None):
         self.wakaq = wakaq
 
-    def start(self, foreground=False):
+    def start(self, background=False):
         setup_logging(self.wakaq)
         log.info(f"starting {self.wakaq.concurrency} workers")
 
-        if foreground:
-            self._run()
-            return
-
-        with daemon.DaemonContext():
+        if background:
+            with daemon.DaemonContext():
+                self._run()
+        else:
             self._run()
 
     def _stop(self):
