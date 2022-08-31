@@ -178,6 +178,9 @@ class Worker:
             self._num_tasks_processed = 0
             while not self._stop_processing:
                 self._execute_next_task_from_queue()
+                if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
+                    log.debug(f"restarting worker after {self._num_tasks_processed} tasks")
+                    self._stop_processing = True
 
         except:
             log.error(traceback.format_exc())
@@ -247,9 +250,6 @@ class Worker:
             task.fn(*payload["args"], **payload["kwargs"])
             current_task.set(None)
             self._num_tasks_processed += 1
-            if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
-                log.debug(f"restarting worker after {self._num_tasks_processed} tasks")
-                self._stop_processing = True
         os.write(self._pingout, b".")
 
     def _read_child_logs(self):
