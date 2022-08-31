@@ -124,6 +124,10 @@ class Worker:
         self._pubsub = self.wakaq.broker.pubsub()
         self._pubsub.subscribe(self.wakaq.broadcast_key)
 
+        log.info("finished forking all workers")
+        if self.wakaq.after_startup:
+            self.wakaq.after_startup()
+
         while not self._stop_processing:
             self._read_child_logs()
             self._check_max_mem_percent()
