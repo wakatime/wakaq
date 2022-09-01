@@ -248,7 +248,7 @@ class Worker:
                 self.wakaq.before_task_started_callback()
             try:
                 task.fn(*payload["args"], **payload["kwargs"])
-            except SoftTimeout:
+            except:
                 log.error(traceback.format_exc())
             finally:
                 current_task.set(None)
