@@ -180,14 +180,14 @@ class Worker:
                 if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
                     log.debug(f"restarting worker after {self._num_tasks_processed} tasks")
                     self._stop_processing = True
+                sys.stdout.flush()
 
         except:
             log.error(traceback.format_exc())
-            return
 
         finally:
-            for handler in log.handlers:
-                handler.flush()
+            sys.stdout.flush()
+            sys.stderr.flush()
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
             os.close(self._stdout)
@@ -216,7 +216,6 @@ class Worker:
         self._stop_processing = True
 
     def _on_soft_timeout_child(self, signum, frame):
-        self._stop_processing = True
         raise SoftTimeout("SoftTimeout")
 
     def _on_child_exited(self, signum, frame):
@@ -254,10 +253,10 @@ class Worker:
             except SoftTimeout:
                 log.error(traceback.format_exc())
             finally:
+                current_task.set(None)
+                self._num_tasks_processed += 1
                 if self.wakaq.after_task_finished_callback:
                     self.wakaq.after_task_finished_callback()
-            current_task.set(None)
-            self._num_tasks_processed += 1
         os.write(self._pingout, b".")
 
     def _read_child_logs(self):
