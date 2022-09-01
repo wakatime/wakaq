@@ -1,6 +1,6 @@
 # CHANGES
 
-## 0.0.2 (unreleased)
+## 0.0.2 (2022-09-01)
 
 #### Breaking
 
