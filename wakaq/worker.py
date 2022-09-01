@@ -196,9 +196,8 @@ class Worker:
                 handler.flush()
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
-            fh.close()
-            os.close(self._pingout)
             os.close(self._stdout)
+            os.close(self._pingout)
 
     def _add_child(self, pid, pingin, stdin):
         self.children.append(Child(pid, pingin, stdin))

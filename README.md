@@ -37,6 +37,11 @@ wakaq = WakaQ(
         Queue('another-queue', priority=3),
     ],
 
+    # Number of worker processes. Must be an int or str which evaluates to an
+    # int. The variable "cores" is replaced with the number of processors on
+    # the current machine.
+    concurrency="cores*4",
+
     # Raise SoftTimeout in a task if it runs longer than 30 seconds.
     soft_timeout=30,  # seconds
 

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
+import ast
+import operator
 import os
 import sys
 from importlib import import_module
@@ -73,6 +75,51 @@ def read_fd(fd):
         return os.read(fd, 64000)
     except OSError:
         return b""
+
+
+_operations = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Pow: operator.pow,
+}
+
+
+def _safe_eval(node, variables, functions):
+    if isinstance(node, ast.Num):
+        return node.n
+    elif isinstance(node, ast.Name):
+        try:
+            return variables[node.id]
+        except KeyError:
+            raise Exception(f"Unknown variable: {node.id}")
+    elif isinstance(node, ast.BinOp):
+        try:
+            op = _operations[node.op.__class__]
+        except KeyError:
+            raise Exception(f"Unknown operation: {node.op.__class__}")
+        left = _safe_eval(node.left, variables, functions)
+        right = _safe_eval(node.right, variables, functions)
+        if isinstance(node.op, ast.Pow):
+            assert right < 100
+        return op(left, right)
+    elif isinstance(node, ast.Call):
+        assert not node.keywords and not node.starargs and not node.kwargs
+        assert isinstance(node.func, ast.Name), "Unsafe function derivation"
+        try:
+            func = functions[node.func.id]
+        except KeyError:
+            raise Exception(f"Unknown function: {node.func.id}")
+        args = [_safe_eval(arg, variables, functions) for arg in node.args]
+        return func(*args)
+    assert False, "Unsafe operation"
+
+
+def safe_eval(expr, variables={}, functions={}):
+    node = ast.parse(expr, "<string>", "eval").body
+    return _safe_eval(node, variables, functions)
 
 
 class Context:

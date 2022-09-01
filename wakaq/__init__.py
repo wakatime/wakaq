@@ -12,6 +12,7 @@ from .queue import Queue
 from .scheduler import CronTask
 from .serializer import deserialize, serialize
 from .task import Task
+from .utils import safe_eval
 
 __all__ = [
     "WakaQ",
@@ -66,7 +67,7 @@ class WakaQ:
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
         self.broker_keys = [x.broker_key for x in self.queues]
         self.schedules = [CronTask.create(x) for x in schedules]
-        self.concurrency = abs(int(concurrency)) or multiprocessing.cpu_count()
+        self.concurrency = self._format_concurrency(concurrency)
         self.exclude_queues = self._validate_queue_names(exclude_queues)
         self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
         self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
@@ -195,3 +196,11 @@ class WakaQ:
         if queue.priority < 0:
             queue.priority = lowest_priority + 1
         return queue
+
+    def _format_concurrency(self, concurrency):
+        if not concurrency:
+            return 0
+        try:
+            return safe_eval(str(concurrency), {"cores": multiprocessing.cpu_count()})
+        except Exception as e:
+            raise Exception(f"Error parsing concurrency: {e}")
