@@ -33,7 +33,8 @@ class WakaQ:
     max_tasks_per_worker = None
     worker_log_file = None
     scheduler_log_file = None
-    log_level = None
+    worker_log_level = None
+    scheduler_log_level = None
 
     after_worker_started_callback = None
 
@@ -56,7 +57,8 @@ class WakaQ:
         max_tasks_per_worker=None,
         worker_log_file=None,
         scheduler_log_file=None,
-        log_level=None,
+        worker_log_level=None,
+        scheduler_log_level=None,
         socket_timeout=15,
         socket_connect_timeout=15,
         health_check_interval=30,
@@ -98,7 +100,8 @@ class WakaQ:
         self.max_tasks_per_worker = abs(int(max_tasks_per_worker)) if max_tasks_per_worker else None
         self.worker_log_file = worker_log_file if isinstance(worker_log_file, str) else None
         self.scheduler_log_file = scheduler_log_file if isinstance(scheduler_log_file, str) else None
-        self.log_level = log_level if isinstance(log_level, int) else logging.INFO
+        self.worker_log_level = worker_log_level if isinstance(worker_log_level, int) else logging.INFO
+        self.scheduler_log_level = scheduler_log_level if isinstance(scheduler_log_level, int) else logging.INFO
 
         self.tasks = {}
         self.broker = redis.Redis(

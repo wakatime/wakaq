@@ -33,17 +33,18 @@ def setup_logging(wakaq, is_child=None, is_scheduler=None):
     for handler in logger.handlers:
         logger.removeHandler(handler)
 
-    logger.setLevel(wakaq.log_level)
-    captureWarnings(True)
-
     log_file = wakaq.scheduler_log_file if is_scheduler else wakaq.worker_log_file
+    log_level = wakaq.scheduler_log_level if is_scheduler else wakaq.worker_log_level
+
+    logger.setLevel(log_level)
+    captureWarnings(True)
 
     out = sys.stdout if is_child or not log_file else log_file
     options = {}
     if not is_child and log_file:
         options["encoding"] = "utf8"
     handler = (StreamHandler if is_child or not log_file else WatchedFileHandler)(out, **options)
-    handler.setLevel(wakaq.log_level)
+    handler.setLevel(log_level)
 
     formatter = Formatter(wakaq)
     handler.setFormatter(formatter)
