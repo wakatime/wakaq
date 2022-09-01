@@ -87,6 +87,20 @@ def read_fd(fd):
         return b""
 
 
+def close_fd(fd):
+    try:
+        os.close(fd)
+    except:
+        pass
+
+
+def flush_fh(fh):
+    try:
+        fh.flush()
+    except:
+        pass
+
+
 _operations = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,

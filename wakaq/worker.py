@@ -15,7 +15,7 @@ import psutil
 from .exceptions import SoftTimeout
 from .logger import setup_logging
 from .serializer import deserialize
-from .utils import current_task, kill, read_fd
+from .utils import close_fd, current_task, flush_fh, kill, read_fd
 
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -30,36 +30,27 @@ log = logging.getLogger("wakaq")
 class Child:
     __slots__ = [
         "pid",
-        "pingin",
         "stdin",
-        "stdout",
+        "pingin",
+        "broadcastout",
         "last_ping",
         "soft_timeout_reached",
         "done",
     ]
 
-    def __init__(self, pid, pingin, stdin, stdout):
+    def __init__(self, pid, stdin, pingin, broadcastout):
         self.pid = pid
-        self.pingin = pingin
         self.stdin = stdin
-        self.stdout = stdout
+        self.pingin = pingin
+        self.broadcastout = broadcastout
         self.soft_timeout_reached = False
         self.last_ping = time.time()
         self.done = False
 
     def close(self):
-        try:
-            os.close(self.pingin)
-        except:
-            pass
-        try:
-            os.close(self.stdin)
-        except:
-            pass
-        try:
-            os.close(self.stdout)
-        except:
-            pass
+        close_fd(self.pingin)
+        close_fd(self.stdin)
+        close_fd(self.broadcastout)
 
 
 class Worker:
@@ -70,7 +61,7 @@ class Worker:
         "_max_mem_reached_at",
         "_pubsub",
         "_pingout",
-        "_stdin",
+        "_broadcastin",
         "_stdout",
         "_num_tasks_processed",
     ]
@@ -104,14 +95,19 @@ class Worker:
 
     def _fork(self) -> int:
         pingin, pingout = os.pipe()
+        broadcastin, broadcastout = os.pipe()
         stdin, stdout = os.pipe()
         pid = os.fork()
         if pid == 0:
-            os.close(pingin)
-            self._child(pingout, stdin, stdout)
+            close_fd(stdin)
+            close_fd(pingin)
+            close_fd(broadcastout)
+            self._child(stdout, pingout, broadcastin)
         else:
-            os.close(pingout)
-            self._add_child(pid, pingin, stdin, stdout)
+            close_fd(stdout)
+            close_fd(pingout)
+            close_fd(broadcastin)
+            self._add_child(pid, stdin, pingin, broadcastout)
         return pid
 
     def _parent(self):
@@ -142,23 +138,23 @@ class Worker:
                 self._check_child_runtimes()
                 time.sleep(0.05)
 
-    def _child(self, pingout, stdin, stdout):
+    def _child(self, stdout, pingout, broadcastin):
         self._pingout = pingout
-        self._stdin = stdin
+        self._broadcastin = broadcastin
         self._stdout = stdout
 
         fh = os.fdopen(stdout, "w")
         sys.stdout = fh
         sys.stderr = fh
 
-        # ignore ctrl-c sent to process group from terminal
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-
         # reset sigchld
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
         # stop processing and gracefully shutdown
         signal.signal(signal.SIGTERM, self._on_exit_child)
+
+        # ignore ctrl-c sent to process group from terminal
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         # raise SoftTimeout
         signal.signal(signal.SIGQUIT, self._on_soft_timeout_child)
@@ -184,24 +180,23 @@ class Worker:
                 self._execute_task(payload)
                 self._execute_broadcast_tasks()
                 if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
-                    log.debug(f"restarting worker after {self._num_tasks_processed} tasks")
+                    log.info(f"restarting worker after {self._num_tasks_processed} tasks")
                     self._stop_processing = True
-                sys.stdout.flush()
+                flush_fh(sys.stdout)
 
         except:
             log.error(traceback.format_exc())
 
         finally:
-            sys.stdout.flush()
-            sys.stderr.flush()
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
-            os.close(self._stdin)
-            os.close(self._stdout)
-            os.close(self._pingout)
+            flush_fh(fh)
+            close_fd(self._broadcastin)
+            close_fd(self._stdout)
+            close_fd(self._pingout)
 
-    def _add_child(self, pid, pingin, stdin, stdout):
-        self.children.append(Child(pid, pingin, stdin, stdout))
+    def _add_child(self, pid, stdin, pingin, broadcastout):
+        self.children.append(Child(pid, stdin, pingin, broadcastout))
 
     def _remove_all_children(self):
         for child in self.children:
@@ -269,7 +264,7 @@ class Worker:
         os.write(self._pingout, b".")
 
     def _execute_broadcast_tasks(self):
-        payloads = read_fd(self._stdin)
+        payloads = read_fd(self._broadcastin)
         if payloads == b"":
             return
         for payload in payloads.decode("utf8").splitlines():
@@ -326,8 +321,7 @@ class Worker:
                 if child.done:
                     continue
                 log.debug(f"run broadcast task: {payload}")
-                os.write(child.stdout, f"{payload}\n".encode("utf8"))
-                os.fsync(child.stdout)
+                os.write(child.broadcastout, f"{payload}\n".encode("utf8"))
                 break
 
     def _refork_missing_children(self):
