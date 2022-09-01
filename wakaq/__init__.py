@@ -31,7 +31,8 @@ class WakaQ:
     wait_timeout = None
     max_mem_percent = None
     max_tasks_per_worker = None
-    log_file = None
+    worker_log_file = None
+    scheduler_log_file = None
     log_level = None
 
     after_worker_started_callback = None
@@ -53,7 +54,8 @@ class WakaQ:
         hard_timeout=None,
         max_mem_percent=None,
         max_tasks_per_worker=None,
-        log_file=None,
+        worker_log_file=None,
+        scheduler_log_file=None,
         log_level=None,
         socket_timeout=15,
         socket_connect_timeout=15,
@@ -94,7 +96,8 @@ class WakaQ:
             self.max_mem_percent = None
 
         self.max_tasks_per_worker = abs(int(max_tasks_per_worker)) if max_tasks_per_worker else None
-        self.log_file = log_file if isinstance(log_file, str) else None
+        self.worker_log_file = worker_log_file if isinstance(worker_log_file, str) else None
+        self.scheduler_log_file = scheduler_log_file if isinstance(scheduler_log_file, str) else None
         self.log_level = log_level if isinstance(log_level, int) else logging.INFO
 
         self.tasks = {}

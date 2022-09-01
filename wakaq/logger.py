@@ -27,7 +27,7 @@ class Formatter(FormatterBase):
         return super().format(record)
 
 
-def setup_logging(wakaq, is_child=None):
+def setup_logging(wakaq, is_child=None, is_scheduler=None):
     logger = getLogger("wakaq")
 
     for handler in logger.handlers:
@@ -36,11 +36,13 @@ def setup_logging(wakaq, is_child=None):
     logger.setLevel(wakaq.log_level)
     captureWarnings(True)
 
-    out = sys.stdout if is_child or not wakaq.log_file else wakaq.log_file
+    log_file = wakaq.scheduler_log_file if is_scheduler else wakaq.worker_log_file
+
+    out = sys.stdout if is_child or not log_file else log_file
     options = {}
-    if not is_child and wakaq.log_file:
+    if not is_child and log_file:
         options["encoding"] = "utf8"
-    handler = (StreamHandler if is_child or not wakaq.log_file else WatchedFileHandler)(out, **options)
+    handler = (StreamHandler if is_child or not log_file else WatchedFileHandler)(out, **options)
     handler.setLevel(wakaq.log_level)
 
     formatter = Formatter(wakaq)

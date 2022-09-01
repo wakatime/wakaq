@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
 
+import logging
 from datetime import datetime, timedelta
 
 import daemon
 from croniter import croniter
 
+from .logger import setup_logging
 from .serializer import serialize
+
+log = logging.getLogger("wakaq")
 
 
 class CronTask:
@@ -20,6 +24,7 @@ class CronTask:
 
     def __init__(self, schedule=None, task_name=None, queue=None, args=None, kwargs=None):
         if not croniter.is_valid(schedule):
+            log.error(f"Invalid cron schedule (min hour dom month dow): {schedule}")
             raise Exception(f"Invalid cron schedule (min hour dom month dow): {schedule}")
 
         self.schedule = schedule
@@ -30,11 +35,13 @@ class CronTask:
     def create(cls, obj, queues_by_name=None):
         if isinstance(obj, cls):
             if queues_by_name is not None and obj.queue and obj.queue not in queues_by_name:
+                log.error(f"Unknown queue: {obj.queue}")
                 raise Exception(f"Unknown queue: {obj.queue}")
             return obj
         elif isinstance(obj, (list, tuple)) and len(obj) == 4:
             return cls(schedule=obj[0], task_name=obj[1], args=obj[2], kwargs=obj[3])
         else:
+            log.error(f"Invalid schedule: {obj}")
             raise Exception(f"Invalid schedule: {obj}")
 
     @property
@@ -58,7 +65,11 @@ class Scheduler:
         self.wakaq = wakaq
 
     def start(self, background=False):
+        setup_logging(self.wakaq, is_scheduler=True)
+        log.info("starting scheduler")
+
         if len(self.wakaq.schedules) == 0:
+            log.error("no scheduled tasks found")
             raise Exception("No scheduled tasks found.")
 
         self.schedules = []
