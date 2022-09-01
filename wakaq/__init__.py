@@ -37,6 +37,8 @@ class WakaQ:
     scheduler_log_level = None
 
     after_worker_started_callback = None
+    before_task_started_callback = None
+    after_task_finished_callback = None
 
     eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
@@ -126,6 +128,14 @@ class WakaQ:
 
     def after_worker_started(self, callback):
         self.after_worker_started_callback = callback
+        return callback
+
+    def before_task_started(self, callback):
+        self.before_task_started_callback = callback
+        return callback
+
+    def after_task_finished(self, callback):
+        self.after_task_finished_callback = callback
         return callback
 
     def _validate_queue_names(self, queue_names: list) -> list:
