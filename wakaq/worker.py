@@ -247,7 +247,10 @@ class Worker:
             if self.wakaq.before_task_started_callback:
                 self.wakaq.before_task_started_callback()
             try:
-                task.fn(*payload["args"], **payload["kwargs"])
+                if self.wakaq.wrap_tasks_function:
+                    self.wakaq.wrap_tasks_function(task.fn)(*payload["args"], **payload["kwargs"])
+                else:
+                    task.fn(*payload["args"], **payload["kwargs"])
             except:
                 log.error(traceback.format_exc())
             finally:

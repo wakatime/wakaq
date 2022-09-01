@@ -39,6 +39,7 @@ class WakaQ:
     after_worker_started_callback = None
     before_task_started_callback = None
     after_task_finished_callback = None
+    wrap_tasks_function = None
 
     broadcast_key = "wakaq-broadcast"
     log_format = "[%(asctime)s] %(levelname)s: %(message)s"
@@ -135,6 +136,10 @@ class WakaQ:
 
     def after_task_finished(self, callback):
         self.after_task_finished_callback = callback
+        return callback
+
+    def wrap_tasks_with(self, callback):
+        self.wrap_tasks_function = callback
         return callback
 
     def _validate_queue_names(self, queue_names: list) -> list:
