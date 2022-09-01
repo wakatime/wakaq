@@ -177,6 +177,9 @@ class Worker:
 
             log.debug("started worker process")
 
+            if self.wakaq.after_worker_started_callback:
+                self.wakaq.after_worker_started_callback()
+
             self._num_tasks_processed = 0
             while not self._stop_processing:
                 self._execute_next_task_from_queue()
