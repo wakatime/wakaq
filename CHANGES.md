@@ -1,5 +1,15 @@
 # CHANGES
 
+## 0.0.3 (2022-09-01)
+
+#### Bugfix
+
+- Prevent worker process crashing on any exception.
+
+#### Feature
+
+- Ability to wrap tasks with custom dectorator function.
+
 ## 0.0.2 (2022-09-01)
 
 #### Breaking
