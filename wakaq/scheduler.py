@@ -2,6 +2,7 @@
 
 
 import logging
+import time
 from datetime import datetime, timedelta
 
 import daemon
@@ -96,6 +97,7 @@ class Scheduler:
                         queue = task.queue
                     else:
                         queue = self.wakaq.queues[-1]
+                    log.debug(f"running scheduled task on {queue.name}: {task.name}")
                     self.wakaq.broker.lpush(queue.broker_key, cron_task.payload)
 
             upcoming_tasks = []
@@ -108,6 +110,8 @@ class Scheduler:
                     upcoming_tasks = [cron_task]
                 elif self._is_same_minute_precision(dt, sleep_until):
                     upcoming_tasks.append(cron_task)
+
+            time.sleep((sleep_until - base).total_seconds())
 
             base = sleep_until
 
