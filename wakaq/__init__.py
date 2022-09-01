@@ -188,12 +188,10 @@ class WakaQ:
         timestamp = calendar.timegm(eta.utctimetuple())
         self.broker.zadd(queue.broker_eta_key, {payload: timestamp}, nx=True)
 
-    def _broadcast(self, task_name: str, queue: str, args: list, kwargs: dict):
-        queue = self._queue_or_default(queue)
+    def _broadcast(self, task_name: str, args: list, kwargs: dict):
         payload = serialize(
             {
                 "name": task_name,
-                "queue": queue.name,
                 "args": args,
                 "kwargs": kwargs,
             }

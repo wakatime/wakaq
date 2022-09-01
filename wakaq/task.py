@@ -49,5 +49,4 @@ class Task:
         Returns the number of workers the task was sent to.
         """
 
-        queue = kwargs.pop("queue", None) or self.queue
-        return self.wakaq._broadcast(self.name, queue, args, kwargs)
+        return self.wakaq._broadcast(self.name, args, kwargs)

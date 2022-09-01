@@ -32,15 +32,17 @@ class Child:
         "pid",
         "pingin",
         "stdin",
+        "stdout",
         "last_ping",
         "soft_timeout_reached",
         "done",
     ]
 
-    def __init__(self, pid, pingin, stdin):
+    def __init__(self, pid, pingin, stdin, stdout):
         self.pid = pid
         self.pingin = pingin
         self.stdin = stdin
+        self.stdout = stdout
         self.soft_timeout_reached = False
         self.last_ping = time.time()
         self.done = False
@@ -54,6 +56,10 @@ class Child:
             os.close(self.stdin)
         except:
             pass
+        try:
+            os.close(self.stdout)
+        except:
+            pass
 
 
 class Worker:
@@ -64,6 +70,7 @@ class Worker:
         "_max_mem_reached_at",
         "_pubsub",
         "_pingout",
+        "_stdin",
         "_stdout",
         "_num_tasks_processed",
     ]
@@ -101,12 +108,10 @@ class Worker:
         pid = os.fork()
         if pid == 0:
             os.close(pingin)
-            os.close(stdin)
-            self._child(pingout, stdout)
+            self._child(pingout, stdin, stdout)
         else:
             os.close(pingout)
-            os.close(stdout)
-            self._add_child(pid, pingin, stdin)
+            self._add_child(pid, pingin, stdin, stdout)
         return pid
 
     def _parent(self):
@@ -137,8 +142,9 @@ class Worker:
                 self._check_child_runtimes()
                 time.sleep(0.05)
 
-    def _child(self, pingout, stdout):
+    def _child(self, pingout, stdin, stdout):
         self._pingout = pingout
+        self._stdin = stdin
         self._stdout = stdout
 
         fh = os.fdopen(stdout, "w")
@@ -174,7 +180,9 @@ class Worker:
 
             self._num_tasks_processed = 0
             while not self._stop_processing:
-                self._execute_next_task_from_queue()
+                payload = self.wakaq._blocking_dequeue()
+                self._execute_task(payload)
+                self._execute_broadcast_tasks()
                 if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
                     log.debug(f"restarting worker after {self._num_tasks_processed} tasks")
                     self._stop_processing = True
@@ -188,11 +196,12 @@ class Worker:
             sys.stderr.flush()
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
+            os.close(self._stdin)
             os.close(self._stdout)
             os.close(self._pingout)
 
-    def _add_child(self, pid, pingin, stdin):
-        self.children.append(Child(pid, pingin, stdin))
+    def _add_child(self, pid, pingin, stdin, stdout):
+        self.children.append(Child(pid, pingin, stdin, stdout))
 
     def _remove_all_children(self):
         for child in self.children:
@@ -238,8 +247,7 @@ class Worker:
                 kwargs = payload.pop("kwargs")
                 self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
-    def _execute_next_task_from_queue(self):
-        payload = self.wakaq._blocking_dequeue()
+    def _execute_task(self, payload):
         if payload is not None:
             task = self.wakaq.tasks[payload["name"]]
             current_task.set(task)
@@ -259,6 +267,14 @@ class Worker:
                 if self.wakaq.after_task_finished_callback:
                     self.wakaq.after_task_finished_callback()
         os.write(self._pingout, b".")
+
+    def _execute_broadcast_tasks(self):
+        payloads = read_fd(self._stdin)
+        if payloads == b"":
+            return
+        for payload in payloads.decode("utf8").splitlines():
+            payload = deserialize(payload)
+            self._execute_task(payload)
 
     def _read_child_logs(self):
         for child in self.children:
@@ -306,12 +322,13 @@ class Worker:
         msg = self._pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
         if msg:
             payload = msg["data"]
-            payload = deserialize(payload)
-            task_name = payload.pop("name")
-            queue = payload.pop("queue")
-            args = payload.pop("args")
-            kwargs = payload.pop("kwargs")
-            self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
+            for child in self.children:
+                if child.done:
+                    continue
+                log.debug(f"run broadcast task: {payload}")
+                os.write(child.stdout, f"{payload}\n".encode("utf8"))
+                os.fsync(child.stdout)
+                break
 
     def _refork_missing_children(self):
         if self._stop_processing:
