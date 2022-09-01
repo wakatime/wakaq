@@ -62,8 +62,11 @@ wakaq = WakaQ(
         # Runs mytask on the queue with priority 1.
         CronTask('* * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
 
+        # Runs mytask once every 5 minutes.
+        ('*/5 * * * *', 'mytask', [1, 1], {}),
+
         # Runs anothertask on the default lowest priority queue.
-        ('*/10 * * * *', 'anothertask', [1, 1], {}),
+        ('*/10 * * * *', 'anothertask'),
     ],
 )
 
@@ -74,8 +77,8 @@ def mytask(x, y):
 
 
 @wakaq.task
-def anothertask(x, y):
-    print(x + y)
+def anothertask():
+    print("hello world")
 
 
 @wakaq.after_worker_started
@@ -89,10 +92,10 @@ if __name__ == '__main__':
     # add 1 plus 1 on a worker somewhere, overwriting the task's queue from medium to high
     mytask.delay(1, 1, queue='a-high-priority-queue')
     # add 1 plus 1 on a worker somewhere, running on the default lowest priority queue
-    anothertask.delay(1, 1)
+    anothertask.delay()
 ```
 
 
-[broadcast]: https://github.com/wakatime/wakaq/blob/804a4afd6c66a9eafa0bdbe7e49d7484079cb25e/wakaq/task.py#L44
-[soft timeout]: https://github.com/wakatime/wakaq/blob/804a4afd6c66a9eafa0bdbe7e49d7484079cb25e/wakaq/exceptions.py#L4
-[hard timeout]: https://github.com/wakatime/wakaq/blob/804a4afd6c66a9eafa0bdbe7e49d7484079cb25e/wakaq/worker.py#L199
+[broadcast]: https://github.com/wakatime/wakaq/blob/996af0ea337c53161ce78a4650ef7d08d44f6038/wakaq/task.py#L30
+[soft timeout]: https://github.com/wakatime/wakaq/blob/996af0ea337c53161ce78a4650ef7d08d44f6038/wakaq/exceptions.py#L8
+[hard timeout]: https://github.com/wakatime/wakaq/blob/996af0ea337c53161ce78a4650ef7d08d44f6038/wakaq/worker.py#L316
