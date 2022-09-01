@@ -81,7 +81,8 @@ def anothertask(x, y):
 @wakaq.after_worker_started
 def after_worker_started():
     logger = logging.getLogger("wakaq")
-    # add your custom log handler
+    # runs once in each forked worker process
+    # check the source code for more callback decorators
 
 
 if __name__ == '__main__':

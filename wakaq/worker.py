@@ -119,8 +119,6 @@ class Worker:
         self._pubsub.subscribe(self.wakaq.broadcast_key)
 
         log.info("finished forking all workers")
-        if self.wakaq.after_worker_started_callback:
-            self.wakaq.after_worker_started_callback()
 
         while not self._stop_processing:
             self._read_child_logs()
