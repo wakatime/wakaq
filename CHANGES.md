@@ -1,5 +1,11 @@
 # CHANGES
 
+## 0.0.5 (2022-09-01)
+
+#### Bugfix
+
+- Run broadcast tasks once per worker instead of randomly.
+
 ## 0.0.4 (2022-09-01)
 
 #### Feature
