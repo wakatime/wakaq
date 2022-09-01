@@ -10,7 +10,6 @@ import sys
 import time
 import traceback
 
-import daemon
 import psutil
 
 from .exceptions import SoftTimeout
@@ -72,15 +71,10 @@ class Worker:
     def __init__(self, wakaq=None):
         self.wakaq = wakaq
 
-    def start(self, background=False):
+    def start(self):
         setup_logging(self.wakaq)
         log.info(f"starting {self.wakaq.concurrency} workers")
-
-        if background:
-            with daemon.DaemonContext():
-                self._run()
-        else:
-            self._run()
+        self._run()
 
     def _stop(self):
         self._stop_processing = True

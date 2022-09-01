@@ -1,7 +1,4 @@
 click
 croniter
 psutil
-pytest
-pytest-cov
-python-daemon
 redis

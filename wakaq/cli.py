@@ -19,22 +19,20 @@ from .worker import Worker
 
 @click.command()
 @click.option("--app", required=True, help="Import path of the WakaQ instance.")
-@click.option("--background", is_flag=True, help="Run as a daemon in background; Default is to run in the foreground.")
 def worker(**options):
     """Run worker(s) to process tasks from queue(s) defined in your app."""
     wakaq = import_app(options.pop("app"))
     worker = Worker(wakaq=wakaq)
-    worker.start(**options)
+    worker.start()
 
 
 @click.command()
 @click.option("--app", required=True, help="Import path of the WakaQ instance.")
-@click.option("--background", is_flag=True, help="Run as a daemon in background; Default is to run in the foreground.")
 def scheduler(**options):
     """Run a scheduler to enqueue periodic tasks based on a schedule defined in your app."""
     wakaq = import_app(options.pop("app"))
     scheduler = Scheduler(wakaq=wakaq)
-    scheduler.start(**options)
+    scheduler.start()
 
 
 @click.command()

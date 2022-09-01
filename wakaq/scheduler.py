@@ -5,7 +5,6 @@ import logging
 import time
 from datetime import datetime, timedelta
 
-import daemon
 from croniter import croniter
 
 from .logger import setup_logging
@@ -31,6 +30,8 @@ class CronTask:
         self.schedule = schedule
         self.task_name = task_name
         self.queue = queue
+        self.args = args
+        self.kwargs = kwargs
 
     @classmethod
     def create(cls, obj, queues_by_name=None):
@@ -65,7 +66,7 @@ class Scheduler:
     def __init__(self, wakaq=None):
         self.wakaq = wakaq
 
-    def start(self, background=False):
+    def start(self):
         setup_logging(self.wakaq, is_scheduler=True)
         log.info("starting scheduler")
 
@@ -77,11 +78,7 @@ class Scheduler:
         for schedule in self.wakaq.schedules:
             self.schedules.append(CronTask.create(schedule, queues_by_name=self.wakaq.queues_by_name))
 
-        if background:
-            with daemon.DaemonContext():
-                self._run()
-        else:
-            self._run()
+        self._run()
 
     def _run(self):
         base = datetime.utcnow()
@@ -97,7 +94,7 @@ class Scheduler:
                         queue = task.queue
                     else:
                         queue = self.wakaq.queues[-1]
-                    log.debug(f"running scheduled task on {queue.name}: {task.name}")
+                    log.debug(f"run scheduled task on queue {queue.name}: {task.name}")
                     self.wakaq.broker.lpush(queue.broker_key, cron_task.payload)
 
             upcoming_tasks = []
@@ -111,6 +108,7 @@ class Scheduler:
                 elif self._is_same_minute_precision(dt, sleep_until):
                     upcoming_tasks.append(cron_task)
 
+            # sleep until the next scheduled task
             time.sleep((sleep_until - base).total_seconds())
 
             base = sleep_until
