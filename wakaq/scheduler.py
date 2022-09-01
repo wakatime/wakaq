@@ -40,6 +40,8 @@ class CronTask:
                 log.error(f"Unknown queue: {obj.queue}")
                 raise Exception(f"Unknown queue: {obj.queue}")
             return obj
+        elif isinstance(obj, (list, tuple)) and len(obj) == 2:
+            return cls(schedule=obj[0], task_name=obj[1])
         elif isinstance(obj, (list, tuple)) and len(obj) == 4:
             return cls(schedule=obj[0], task_name=obj[1], args=obj[2], kwargs=obj[3])
         else:
@@ -51,8 +53,8 @@ class CronTask:
         return serialize(
             {
                 "name": self.task_name,
-                "args": self.args,
-                "kwargs": self.kwargs,
+                "args": self.args if self.args is not None else [],
+                "kwargs": self.kwargs if self.kwargs is not None else {},
             }
         )
 
