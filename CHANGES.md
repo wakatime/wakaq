@@ -1,5 +1,11 @@
 # CHANGES
 
+## 0.0.4 (2022-09-01)
+
+#### Feature
+
+- Allow defining schedules as tuple of cron and task name, without args.
+
 ## 0.0.3 (2022-09-01)
 
 #### Bugfix
