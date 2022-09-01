@@ -20,6 +20,7 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 ## Example
 
 ```python
+import logging
 from wakaq import WakaQ, Queue, CronTask
 from datetime import timedelta
 
@@ -70,6 +71,12 @@ def mytask(x, y):
 @wakaq.task
 def anothertask(x, y):
     print(x + y)
+
+
+@wakaq.after_worker_started
+def after_worker_started():
+    logger = logging.getLogger("wakaq")
+    # add your custom log handler
 
 
 if __name__ == '__main__':

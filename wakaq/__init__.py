@@ -32,8 +32,8 @@ class WakaQ:
     max_tasks_per_worker = None
     log_file = None
     log_level = None
-    after_startup = None
-    after_worker_startup = None
+
+    after_worker_started_callback = None
 
     eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
@@ -52,8 +52,6 @@ class WakaQ:
         hard_timeout=None,
         max_mem_percent=None,
         max_tasks_per_worker=None,
-        after_startup=None,
-        after_worker_startup=None,
         log_file=None,
         log_level=None,
         socket_timeout=15,
@@ -98,14 +96,6 @@ class WakaQ:
         self.log_file = log_file if isinstance(log_file, str) else None
         self.log_level = log_level if isinstance(log_level, int) else logging.INFO
 
-        if after_startup and not callable(after_startup):
-            raise Exception("after_startup must be a function")
-        self.after_startup = after_startup
-
-        if after_worker_startup and not callable(after_worker_startup):
-            raise Exception("after_worker_startup must be a function")
-        self.after_worker_startup = after_worker_startup
-
         self.tasks = {}
         self.broker = redis.Redis(
             host=host,
@@ -126,6 +116,10 @@ class WakaQ:
             return t.fn
 
         return wrap(fn) if fn else wrap
+
+    def after_worker_started(self, callback):
+        self.after_worker_started_callback = callback
+        return callback
 
     def _validate_queue_names(self, queue_names: list) -> list:
         try:
