@@ -9,9 +9,9 @@ from .scheduler import Scheduler
 from .utils import (
     import_app,
     inspect,
-    pending_eta_tasks,
+    pending_eta_tasks_in_queue,
     pending_tasks_in_queue,
-    purge_eta_tasks,
+    purge_eta_queue,
     purge_queue,
 )
 from .worker import Worker
@@ -45,17 +45,13 @@ def info(**options):
 
 @click.command()
 @click.option("--app", required=True, help="Import path of the WakaQ instance.")
-@click.option("--queue", help="Name of queue to purge.")
-@click.option("--eta-tasks", is_flag=True, help="Purge all pending eta tasks.")
+@click.option("--queue", required=True, help="Name of queue to purge.")
 def purge(**options):
     """Remove and empty all pending tasks in a queue."""
     wakaq = import_app(options.pop("app"))
-    queue_name = options.pop("queue", None)
-    if queue_name is not None:
-        count = pending_tasks_in_queue(wakaq, queue_name=queue_name)
-        purge_queue(wakaq, queue_name=queue_name)
-        click.echo(f"Purged {count} tasks from {queue_name}.")
-    if options.get("eta_tasks"):
-        count = pending_eta_tasks(wakaq)
-        purge_eta_tasks(wakaq)
-        click.echo(f"Purged {count} eta tasks.")
+    queue_name = options.pop("queue")
+    count = pending_tasks_in_queue(wakaq, queue_name=queue_name)
+    purge_queue(wakaq, queue_name=queue_name)
+    count += pending_eta_tasks_in_queue(wakaq, queue_name=queue_name)
+    purge_eta_queue(wakaq, queue_name=queue_name)
+    click.echo(f"Purged {count} tasks from {queue_name}")

@@ -12,12 +12,12 @@ class Queue:
     ]
 
     def __init__(self, name=None, priority=-1, prefix=None):
-        self.name = name
+        self.prefix = re.sub(r"[^a-zA-Z0-9_.-]", "", prefix or "wakaq")
+        self.name = re.sub(r"[^a-zA-Z0-9_.-]", "", name)
         try:
             self.priority = int(priority)
         except:
             raise Exception(f"Invalid queue priority: {priority}")
-        self.prefix = re.sub(r"[^a-zA-Z]", "", prefix or "wakaq")
 
     @classmethod
     def create(cls, obj, queues_by_name=None):
@@ -42,3 +42,7 @@ class Queue:
     @property
     def broker_key(self):
         return f"{self.prefix}:{self.name}"
+
+    @property
+    def broker_eta_key(self):
+        return f"{self.prefix}:eta:{self.name}"

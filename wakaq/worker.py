@@ -232,14 +232,14 @@ class Worker:
 
     def _enqueue_ready_eta_tasks(self):
         script = self.wakaq.broker.register_script(ZRANGEPOP)
-        results = script(keys=[self.wakaq.eta_task_key], args=[int(round(time.time()))])
-        for payload in results:
-            payload = deserialize(payload)
-            task_name = payload.pop("name")
-            queue = payload.pop("queue")
-            args = payload.pop("args")
-            kwargs = payload.pop("kwargs")
-            self.wakaq._enqueue_at_front(task_name, queue, args, kwargs)
+        for queue in self.wakaq.queues:
+            results = script(keys=[queue.broker_eta_key], args=[int(round(time.time()))])
+            for payload in results:
+                payload = deserialize(payload)
+                task_name = payload.pop("name")
+                args = payload.pop("args")
+                kwargs = payload.pop("kwargs")
+                self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
     def _execute_next_task_from_queue(self):
         payload = self.wakaq._blocking_dequeue()

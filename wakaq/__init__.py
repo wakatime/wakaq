@@ -40,7 +40,6 @@ class WakaQ:
     before_task_started_callback = None
     after_task_finished_callback = None
 
-    eta_task_key = "wakaq-eta"
     broadcast_key = "wakaq-broadcast"
     log_format = "[%(asctime)s] %(levelname)s: %(message)s"
     task_log_format = "[%(asctime)s] %(levelname)s in %(task)s: %(message)s"
@@ -177,13 +176,12 @@ class WakaQ:
                 "name": task_name,
                 "args": args,
                 "kwargs": kwargs,
-                "queue": queue.name,
             }
         )
         if isinstance(eta, timedelta):
             eta = datetime.utcnow() + eta
         timestamp = calendar.timegm(eta.utctimetuple())
-        self.broker.zadd(self.eta_task_key, {payload: timestamp}, nx=True)
+        self.broker.zadd(queue.broker_eta_key, {payload: timestamp}, nx=True)
 
     def _broadcast(self, task_name: str, queue: str, args: list, kwargs: dict):
         queue = self._queue_or_default(queue)
