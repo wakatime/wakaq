@@ -21,8 +21,8 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 
 ```python
 import logging
-from wakaq import WakaQ, Queue, CronTask
 from datetime import timedelta
+from wakaq import WakaQ, Queue, CronTask
 
 
 wakaq = WakaQ(
@@ -81,11 +81,13 @@ def anothertask():
     print("hello world")
 
 
-@wakaq.after_worker_started
-def after_worker_started():
-    logger = logging.getLogger("wakaq")
-    # runs once in each forked worker process
-    # check the source code for more callback decorators
+@wakaq.wrap_tasks_with
+def custom_task_decorator(fn):
+    def inner(*args, **kwargs):
+        # do something before each task runs
+        fn(*args, **kwargs)
+        # do something after each task runs
+    return inner
 
 
 if __name__ == '__main__':
