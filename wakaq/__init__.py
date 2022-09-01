@@ -101,7 +101,7 @@ class WakaQ:
         self.worker_log_file = worker_log_file if isinstance(worker_log_file, str) else None
         self.scheduler_log_file = scheduler_log_file if isinstance(scheduler_log_file, str) else None
         self.worker_log_level = worker_log_level if isinstance(worker_log_level, int) else logging.INFO
-        self.scheduler_log_level = scheduler_log_level if isinstance(scheduler_log_level, int) else logging.INFO
+        self.scheduler_log_level = scheduler_log_level if isinstance(scheduler_log_level, int) else logging.DEBUG
 
         self.tasks = {}
         self.broker = redis.Redis(
