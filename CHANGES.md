@@ -1,5 +1,15 @@
 # CHANGES
 
+## 0.0.6 (2022-09-03)
+
+#### Feature
+
+- Implement exclude_queues option.
+
+#### Bugfix
+
+- Prevent parent process crash if write to child broadcast pipe fails.
+
 ## 0.0.5 (2022-09-01)
 
 #### Bugfix
