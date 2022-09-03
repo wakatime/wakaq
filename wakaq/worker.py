@@ -15,7 +15,7 @@ import psutil
 from .exceptions import SoftTimeout
 from .logger import setup_logging
 from .serializer import deserialize
-from .utils import close_fd, current_task, flush_fh, kill, read_fd
+from .utils import close_fd, current_task, flush_fh, kill, read_fd, write_fd
 
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -39,6 +39,9 @@ class Child:
     ]
 
     def __init__(self, pid, stdin, pingin, broadcastout):
+        os.set_blocking(stdin, False)
+        os.set_blocking(pingin, False)
+        os.set_blocking(broadcastout, False)
         self.pid = pid
         self.stdin = stdin
         self.pingin = pingin
@@ -139,6 +142,9 @@ class Worker:
                 time.sleep(0.05)
 
     def _child(self, stdout, pingout, broadcastin):
+        os.set_blocking(pingout, False)
+        os.set_blocking(broadcastin, False)
+        os.set_blocking(stdout, False)
         self._pingout = pingout
         self._broadcastin = broadcastin
         self._stdout = stdout
@@ -321,7 +327,7 @@ class Worker:
                 if child.done:
                     continue
                 log.debug(f"run broadcast task: {payload}")
-                os.write(child.broadcastout, f"{payload}\n".encode("utf8"))
+                write_fd(child.broadcastout, f"{payload}\n")
                 break
 
     def _refork_missing_children(self):

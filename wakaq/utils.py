@@ -81,10 +81,16 @@ def kill(pid, signum):
 
 def read_fd(fd):
     try:
-        os.set_blocking(fd, False)
         return os.read(fd, 64000)
     except OSError:
         return b""
+
+
+def write_fd(fd, s):
+    try:
+        os.write(fd, s.encode("utf8"))
+    except:
+        pass
 
 
 def close_fd(fd):
