@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.0.1 (2022-09-05)
+
+#### Bugfix
+
+- All logger vars should be strings.
+
 ## 1.0.0 (2022-09-05)
 
 - First major release.
