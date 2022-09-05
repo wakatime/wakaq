@@ -137,7 +137,7 @@ Create a file at `/etc/systemd/system/wakaqworker.service` with the above conten
 
 
 
-[broadcast]: https://github.com/wakatime/wakaq/blob/2868dc57f5974ba699f5b83f6cec4a6270e43b85/wakaq/task.py#L33
-[soft timeout]: https://github.com/wakatime/wakaq/blob/2868dc57f5974ba699f5b83f6cec4a6270e43b85/wakaq/exceptions.py#L8
-[hard timeout]: https://github.com/wakatime/wakaq/blob/2868dc57f5974ba699f5b83f6cec4a6270e43b85/wakaq/worker.py#L360
+[broadcast]: https://github.com/wakatime/wakaq/blob/2186334f0917ab11ad21e39617ad8a3116169593/wakaq/task.py#L33
+[soft timeout]: https://github.com/wakatime/wakaq/blob/2186334f0917ab11ad21e39617ad8a3116169593/wakaq/exceptions.py#L8
+[hard timeout]: https://github.com/wakatime/wakaq/blob/2186334f0917ab11ad21e39617ad8a3116169593/wakaq/worker.py#L360
 [max open ports]: https://wakatime.com/blog/47-maximize-your-concurrent-web-server-connections
