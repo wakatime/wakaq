@@ -1,3 +1,5 @@
+![WakaQ Logo](https://raw.githubusercontent.com/wakatime/wakaq/main/wakaq.png "WakaQ")
+
 # WakaQ
 Distributed background task queue for Python backed by Redis, a super minimal Celery.
 
