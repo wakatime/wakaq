@@ -1,5 +1,11 @@
 # CHANGES
 
+## 0.0.11 (2022-09-05)
+
+#### Feature
+
+- Add task payload to logger variables.
+
 ## 0.0.10 (2022-09-05)
 
 #### Bugfix
