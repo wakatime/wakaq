@@ -1,5 +1,11 @@
 # CHANGES
 
+## 0.0.8 (2022-09-05)
+
+#### Bugfix
+
+- Prevent parent process crash leaving zombie child processes.
+
 ## 0.0.7 (2022-09-05)
 
 #### Feature
