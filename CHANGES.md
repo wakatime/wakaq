@@ -1,5 +1,11 @@
 # CHANGES
 
+## 0.0.10 (2022-09-05)
+
+#### Bugfix
+
+- Prevent logging error from crashing parent process.
+
 ## 0.0.9 (2022-09-05)
 
 #### Bugfix
