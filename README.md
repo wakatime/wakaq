@@ -110,6 +110,9 @@ if __name__ == '__main__':
 
 When using in production, make sure to [increase the max open ports][max open ports] allowed for your Redis server process.
 
+When using eta tasks a Redis sorted set is used, so eta tasks are automatically deduped based on task name, args, and kwargs.
+If you want multiple pending eta tasks with the same arguments, just add a throwaway random string to the task’s kwargs for ex: `str(uuid.uuid1())`.
+
 #### Running as a Daemon
 
 Here’s an example systemd config to run `wakaq-worker` as a daemon:
