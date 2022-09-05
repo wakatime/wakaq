@@ -1,5 +1,15 @@
 # CHANGES
 
+## 0.0.7 (2022-09-05)
+
+#### Feature
+
+- Ability to retry tasks when they soft timeout.
+
+#### Bugfix
+
+- Ping parent process at start of task to make sure soft timeout timer is reset.
+
 ## 0.0.6 (2022-09-03)
 
 #### Feature
