@@ -81,9 +81,9 @@ def kill(pid, signum):
 
 def read_fd(fd):
     try:
-        return os.read(fd, 64000)
+        return os.read(fd, 64000).decode("utf8")
     except OSError:
-        return b""
+        return ""
 
 
 def write_fd_or_raise(fd, s):

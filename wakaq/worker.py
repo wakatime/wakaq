@@ -151,7 +151,10 @@ class Worker:
                     time.sleep(0.05)
 
         except:
-            log.error(traceback.format_exc())
+            try:
+                log.error(traceback.format_exc())
+            except:
+                print(traceback.format_exc())
             self._stop()
 
     def _child(self, stdout, pingout, broadcastin):
@@ -198,7 +201,7 @@ class Worker:
                 queue_name, payload = self.wakaq._blocking_dequeue()
                 if payload is not None:
                     task = self.wakaq.tasks[payload["name"]]
-                    retry = payload["retry"]
+                    retry = payload.get("retry") or 0
                     try:
                         self._execute_task(task, payload)
                     except SoftTimeout:
@@ -307,9 +310,9 @@ class Worker:
 
     def _execute_broadcast_tasks(self):
         payloads = read_fd(self._broadcastin)
-        if payloads == b"":
+        if payloads == "":
             return
-        for payload in payloads.decode("utf8").splitlines():
+        for payload in payloads.splitlines():
             payload = deserialize(payload)
             task = self.wakaq.tasks[payload["name"]]
             retry = 0
@@ -328,8 +331,8 @@ class Worker:
     def _read_child_logs(self):
         for child in self.children:
             logs = read_fd(child.stdin)
-            if logs != b"":
-                log.handlers[0].stream.write(logs.decode("utf8"))
+            if logs != "":
+                log.handlers[0].stream.write(logs)
 
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
@@ -356,7 +359,7 @@ class Worker:
     def _check_child_runtimes(self):
         for child in self.children:
             ping = read_fd(child.pingin)
-            if ping != b"":
+            if ping != "":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
             elif self.wakaq.soft_timeout or self.wakaq.hard_timeout:
