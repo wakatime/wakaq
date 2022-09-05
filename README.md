@@ -104,7 +104,40 @@ if __name__ == '__main__':
     anothertask.delay()
 ```
 
+## Deployment
 
-[broadcast]: https://github.com/wakatime/wakaq/blob/996af0ea337c53161ce78a4650ef7d08d44f6038/wakaq/task.py#L30
-[soft timeout]: https://github.com/wakatime/wakaq/blob/996af0ea337c53161ce78a4650ef7d08d44f6038/wakaq/exceptions.py#L8
-[hard timeout]: https://github.com/wakatime/wakaq/blob/996af0ea337c53161ce78a4650ef7d08d44f6038/wakaq/worker.py#L316
+#### Optimizing
+
+When using in production, make sure to [increase the max open ports][max open ports] allowed for your Redis server process.
+
+#### Running as a Daemon
+
+Here’s an example systemd config to run `wakaq-worker` as a daemon:
+
+```systemd
+[Unit]
+Description=WakaQ Worker Service
+
+[Service]
+WorkingDirectory=/opt/yourapp
+ExecStart=/opt/yourapp/venv/bin/python /opt/yourapp/venv/bin/wakaq-worker --app=yourapp.wakaq
+RemainAfterExit=no
+Restart=always
+RestartSec=30s
+KillSignal=SIGQUIT
+LimitNOFILE=99999
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Create a file at `/etc/systemd/system/wakaqworker.service` with the above contents, then run:
+
+    systemctl daemon-reload && systemctl enable wakaqworker
+
+
+
+[broadcast]: https://github.com/wakatime/wakaq/blob/2868dc57f5974ba699f5b83f6cec4a6270e43b85/wakaq/task.py#L33
+[soft timeout]: https://github.com/wakatime/wakaq/blob/2868dc57f5974ba699f5b83f6cec4a6270e43b85/wakaq/exceptions.py#L8
+[hard timeout]: https://github.com/wakatime/wakaq/blob/2868dc57f5974ba699f5b83f6cec4a6270e43b85/wakaq/worker.py#L360
+[max open ports]: https://wakatime.com/blog/47-maximize-your-concurrent-web-server-connections
