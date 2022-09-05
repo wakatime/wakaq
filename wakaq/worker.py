@@ -290,7 +290,7 @@ class Worker:
 
     def _execute_task(self, task, payload):
         self._send_ping_to_parent()
-        current_task.set(task)
+        current_task.set((task, payload))
         log.debug(f"running with payload {payload}")
         if self.wakaq.before_task_started_callback:
             self.wakaq.before_task_started_callback()

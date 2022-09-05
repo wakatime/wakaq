@@ -16,14 +16,21 @@ class Formatter(FormatterBase):
 
     def format(self, record):
         task = current_task.get()
-        if task:
+        if task is not None:
+            task, payload = task[0], task[1]
             self._fmt = self.wakaq.task_log_format
             self._style._fmt = self.wakaq.task_log_format
             record.__dict__.update(task=task.name)
+            record.__dict__.update(task_args=payload["args"])
+            record.__dict__.update(task_kwargs=payload["kwargs"])
+            record.__dict__.update(task_retry=payload.get("retry"))
         else:
             self._fmt = self.wakaq.log_format
             self._style._fmt = self.wakaq.log_format
             record.__dict__.setdefault("task", None)
+            record.__dict__.setdefault("task_args", None)
+            record.__dict__.setdefault("task_kwargs", None)
+            record.__dict__.setdefault("task_retry", None)
         return super().format(record)
 
 
