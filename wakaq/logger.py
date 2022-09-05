@@ -6,6 +6,7 @@ from logging import Formatter as FormatterBase
 from logging import StreamHandler, captureWarnings, getLogger
 from logging.handlers import WatchedFileHandler
 
+from .serializer import serialize
 from .utils import current_task
 
 
@@ -21,9 +22,9 @@ class Formatter(FormatterBase):
             self._fmt = self.wakaq.task_log_format
             self._style._fmt = self.wakaq.task_log_format
             record.__dict__.update(task=task.name)
-            record.__dict__.update(task_args=payload["args"])
-            record.__dict__.update(task_kwargs=payload["kwargs"])
-            record.__dict__.update(task_retry=payload.get("retry"))
+            record.__dict__.update(task_args=serialize(payload["args"]))
+            record.__dict__.update(task_kwargs=serialize(payload["kwargs"]))
+            record.__dict__.update(task_retry=serialize(payload.get("retry")))
         else:
             self._fmt = self.wakaq.log_format
             self._style._fmt = self.wakaq.log_format
