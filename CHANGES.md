@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.0.2 (2022-09-05)
+
+#### Bugfix
+
+- Ping parent before blocking dequeue in case wait timeout is near soft timeout.
+
 ## 1.0.1 (2022-09-05)
 
 #### Bugfix
