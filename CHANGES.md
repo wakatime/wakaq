@@ -1,5 +1,9 @@
 # CHANGES
 
+## 1.0.0 (2022-09-05)
+
+- First major release.
+
 ## 0.0.11 (2022-09-05)
 
 #### Feature
