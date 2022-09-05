@@ -1,11 +1,23 @@
-.PHONY: all test release
+.PHONY: all test clean build upload
 
 all:
 	@echo 'test     run the unit tests with the current default python'
+	@echo 'clean    remove builds at dist/*'
+	@echo 'build    run setup.py dist'
+	@echo 'upload   upload all builds in dist folder to pypi'
 	@echo 'release  publish the current version to pypi'
 
 test:
 	@pytest
 
 release:
-	@python ./setup.py sdist upload
+	clean build upload
+
+clean:
+	@rm dist/*
+
+build:
+	@python ./setup.py sdist
+
+upload:
+	@twine upload ./dist/*
