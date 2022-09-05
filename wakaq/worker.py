@@ -198,6 +198,7 @@ class Worker:
 
             self._num_tasks_processed = 0
             while not self._stop_processing:
+                self._send_ping_to_parent()
                 queue_name, payload = self.wakaq._blocking_dequeue()
                 if payload is not None:
                     task = self.wakaq.tasks[payload["name"]]
@@ -221,6 +222,7 @@ class Worker:
                         )
                 else:
                     self._send_ping_to_parent()
+                flush_fh(sys.stdout)
                 self._execute_broadcast_tasks()
                 if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
                     log.info(f"restarting worker after {self._num_tasks_processed} tasks")
