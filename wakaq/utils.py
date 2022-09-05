@@ -86,9 +86,13 @@ def read_fd(fd):
         return b""
 
 
+def write_fd_or_raise(fd, s):
+    os.write(fd, s.encode("utf8"))
+
+
 def write_fd(fd, s):
     try:
-        os.write(fd, s.encode("utf8"))
+        write_fd_or_raise(fd, s)
     except:
         pass
 

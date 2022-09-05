@@ -12,15 +12,18 @@ class Task:
         "fn",
         "wakaq",
         "queue",
+        "max_retries",
     ]
 
-    def __init__(self, fn=None, wakaq=None, queue=None):
+    def __init__(self, fn=None, wakaq=None, queue=None, max_retries=None):
         self.name = fn.__name__
         self.wakaq = wakaq
         if queue:
             self.queue = Queue.create(queue, queues_by_name=self.wakaq.queues_by_name)
         else:
             self.queue = None
+
+        self.max_retries = int(max_retries) if max_retries else None
 
         @wraps(fn)
         def inner(*args, **kwargs):

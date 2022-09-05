@@ -28,6 +28,7 @@ class WakaQ:
     concurrency = 0
     schedules = []
     exclude_queues = []
+    default_max_retries = None
     wait_timeout = None
     max_mem_percent = None
     max_tasks_per_worker = None
@@ -53,6 +54,7 @@ class WakaQ:
         port=6379,
         concurrency=0,
         exclude_queues=[],
+        default_max_retries=None,
         soft_timeout=None,
         hard_timeout=None,
         max_mem_percent=None,
@@ -72,6 +74,7 @@ class WakaQ:
         self.queues.sort(key=lambda q: q.priority)
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
         self.exclude_queues = self._validate_queue_names(exclude_queues)
+        self.default_max_retries = int(default_max_retries or 0)
         self.broker_keys = [x.broker_key for x in self.queues if x.name not in self.exclude_queues]
         self.schedules = [CronTask.create(x) for x in schedules]
         self.concurrency = self._format_concurrency(concurrency)
@@ -116,9 +119,9 @@ class WakaQ:
             socket_connect_timeout=socket_connect_timeout,
         )
 
-    def task(self, fn=None, queue=None):
+    def task(self, fn=None, queue=None, max_retries=None):
         def wrap(f):
-            t = Task(fn=f, wakaq=self, queue=queue)
+            t = Task(fn=f, wakaq=self, queue=queue, max_retries=max_retries)
             if t.name in self.tasks:
                 raise Exception(f"Duplicate task name: {t.name}")
             self.tasks[t.name] = t
@@ -163,13 +166,14 @@ class WakaQ:
         )
         self.broker.lpush(queue.broker_key, payload)
 
-    def _enqueue_at_end(self, task_name: str, queue: str, args: list, kwargs: dict):
+    def _enqueue_at_end(self, task_name: str, queue: str, args: list, kwargs: dict, retry=0):
         queue = self._queue_or_default(queue)
         payload = serialize(
             {
                 "name": task_name,
                 "args": args,
                 "kwargs": kwargs,
+                "retry": retry,
             }
         )
         self.broker.rpush(queue.broker_key, payload)
@@ -200,7 +204,9 @@ class WakaQ:
 
     def _blocking_dequeue(self):
         data = self.broker.blpop(self.broker_keys, self.wait_timeout)
-        return deserialize(data[1]) if data is not None else None
+        if data is None:
+            return None, None
+        return data[0], deserialize(data[1])
 
     def _queue_or_default(self, queue_name: str):
         if queue_name:

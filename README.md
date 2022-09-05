@@ -8,6 +8,7 @@ Distributed background task queue for Python backed by Redis, a super minimal Ce
 * Scheduled periodic tasks
 * [Broadcast][broadcast] a task to all workers
 * Task [soft][soft timeout] and [hard][hard timeout] timeout limits
+* Optionally retry tasks on soft timeout
 * Combat memory leaks with `max_mem_percent` or `max_tasks_per_worker`
 * Super minimal
 
@@ -34,7 +35,7 @@ wakaq = WakaQ(
         (1, 'a-medium-priority-queue'),
         (2, 'a-low-priority-queue'),
         'default-lowest-priority-queue',
-        Queue('another-queue', priority=3),
+        Queue('another-queue', priority=3, default_max_retries=5),
     ],
 
     # Number of worker processes. Must be an int or str which evaluates to an
@@ -47,6 +48,12 @@ wakaq = WakaQ(
 
     # SIGKILL a task if it runs longer than 1 minute.
     hard_timeout=timedelta(minutes=1),
+
+    # If the task soft timeouts, retry up to 3 times. Max retries comes first
+    # from the task decorator if set, next from the Queue's default_max_retries,
+    # lastly from the option below. If No default_max_retries is found, the task
+    # is not retried on a soft timeout.
+    default_max_retries=3,
 
     # Combat memory leaks by reloading a worker (the one using the most RAM),
     # when the total machine RAM usage is at or greater than 98%.
@@ -71,7 +78,7 @@ wakaq = WakaQ(
 )
 
 
-@wakaq.task(queue='a-medium-priority-queue')
+@wakaq.task(queue='a-medium-priority-queue', max_retries=7)
 def mytask(x, y):
     print(x + y)
 

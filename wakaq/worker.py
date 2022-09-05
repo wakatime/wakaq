@@ -15,7 +15,15 @@ import psutil
 from .exceptions import SoftTimeout
 from .logger import setup_logging
 from .serializer import deserialize
-from .utils import close_fd, current_task, flush_fh, kill, read_fd, write_fd
+from .utils import (
+    close_fd,
+    current_task,
+    flush_fh,
+    kill,
+    read_fd,
+    write_fd,
+    write_fd_or_raise,
+)
 
 ZRANGEPOP = """
 local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
@@ -182,8 +190,29 @@ class Worker:
 
             self._num_tasks_processed = 0
             while not self._stop_processing:
-                payload = self.wakaq._blocking_dequeue()
-                self._execute_task(payload)
+                queue_name, payload = self.wakaq._blocking_dequeue()
+                if payload is not None:
+                    task = self.wakaq.tasks[payload["name"]]
+                    retry = payload["retry"]
+                    try:
+                        self._execute_task(task, payload)
+                    except SoftTimeout:
+                        retry += 1
+                        max_retries = task.max_retries
+                        if max_retries is None:
+                            queue = self.wakaq.queues_by_name[queue_name]
+                            max_retries = (
+                                queue.default_max_retries
+                                if queue.default_max_retries is not None
+                                else self.wakaq.default_max_retries
+                            )
+                        if retry > max_retries:
+                            raise
+                        self.wakaq._enqueue_at_end(
+                            task.name, queue_name, payload["args"], payload["kwargs"], retry=retry
+                        )
+                else:
+                    self._send_ping_to_parent()
                 self._execute_broadcast_tasks()
                 if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
                     log.info(f"restarting worker after {self._num_tasks_processed} tasks")
@@ -200,6 +229,9 @@ class Worker:
             close_fd(self._broadcastin)
             close_fd(self._stdout)
             close_fd(self._pingout)
+
+    def _send_ping_to_parent(self):
+        write_fd_or_raise(self._pingout, ".")
 
     def _add_child(self, pid, stdin, pingin, broadcastout):
         self.children.append(Child(pid, stdin, pingin, broadcastout))
@@ -248,26 +280,25 @@ class Worker:
                 kwargs = payload.pop("kwargs")
                 self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
-    def _execute_task(self, payload):
-        if payload is not None:
-            task = self.wakaq.tasks[payload["name"]]
-            current_task.set(task)
-            log.debug(f"running with payload {payload}")
-            if self.wakaq.before_task_started_callback:
-                self.wakaq.before_task_started_callback()
-            try:
-                if self.wakaq.wrap_tasks_function:
-                    self.wakaq.wrap_tasks_function(task.fn)(*payload["args"], **payload["kwargs"])
-                else:
-                    task.fn(*payload["args"], **payload["kwargs"])
-            except:
-                log.error(traceback.format_exc())
-            finally:
-                current_task.set(None)
-                self._num_tasks_processed += 1
-                if self.wakaq.after_task_finished_callback:
-                    self.wakaq.after_task_finished_callback()
-        os.write(self._pingout, b".")
+    def _execute_task(self, task, payload):
+        self._send_ping_to_parent()
+        current_task.set(task)
+        log.debug(f"running with payload {payload}")
+        if self.wakaq.before_task_started_callback:
+            self.wakaq.before_task_started_callback()
+        try:
+            if self.wakaq.wrap_tasks_function:
+                self.wakaq.wrap_tasks_function(task.fn)(*payload["args"], **payload["kwargs"])
+            else:
+                task.fn(*payload["args"], **payload["kwargs"])
+        except:
+            log.error(traceback.format_exc())
+        finally:
+            current_task.set(None)
+            self._send_ping_to_parent()
+            self._num_tasks_processed += 1
+            if self.wakaq.after_task_finished_callback:
+                self.wakaq.after_task_finished_callback()
 
     def _execute_broadcast_tasks(self):
         payloads = read_fd(self._broadcastin)
@@ -275,7 +306,19 @@ class Worker:
             return
         for payload in payloads.decode("utf8").splitlines():
             payload = deserialize(payload)
-            self._execute_task(payload)
+            task = self.wakaq.tasks[payload["name"]]
+            retry = 0
+            while True:
+                try:
+                    self._execute_task(task, payload)
+                    break
+                except SoftTimeout:
+                    retry += 1
+                    max_retries = task.max_retries
+                    if max_retries is None:
+                        max_retries = self.wakaq.default_max_retries
+                    if retry > max_retries:
+                        raise
 
     def _read_child_logs(self):
         for child in self.children:
