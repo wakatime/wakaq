@@ -104,7 +104,7 @@ if __name__ == '__main__':
     anothertask.delay()
 ```
 
-## Deployment
+## Deploying
 
 #### Optimizing
 
