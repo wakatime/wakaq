@@ -129,31 +129,30 @@ class Worker:
 
         log.info("finished forking all workers")
 
-        while len(self.children) > 0:
-            try:
-                self._pubsub = self.wakaq.broker.pubsub()
-                self._pubsub.subscribe(self.wakaq.broadcast_key)
+        try:
+            self._pubsub = self.wakaq.broker.pubsub()
+            self._pubsub.subscribe(self.wakaq.broadcast_key)
 
-                while not self._stop_processing:
-                    self._read_child_logs()
-                    self._check_max_mem_percent()
-                    self._refork_missing_children()
-                    self._enqueue_ready_eta_tasks()
+            while not self._stop_processing:
+                self._read_child_logs()
+                self._check_max_mem_percent()
+                self._refork_missing_children()
+                self._enqueue_ready_eta_tasks()
+                self._cleanup_children()
+                self._check_child_runtimes()
+                self._listen_for_broadcast_task()
+
+            if self._stop_processing:
+                if len(self.children) > 0:
+                    log.info("shutting down...")
+                while len(self.children) > 0:
                     self._cleanup_children()
                     self._check_child_runtimes()
-                    self._listen_for_broadcast_task()
+                    time.sleep(0.05)
 
-                if self._stop_processing:
-                    if len(self.children) > 0:
-                        log.info("shutting down...")
-                    while len(self.children) > 0:
-                        self._cleanup_children()
-                        self._check_child_runtimes()
-                        time.sleep(0.05)
-
-            except:
-                log.error(traceback.format_exc())
-                self._stop()
+        except:
+            log.error(traceback.format_exc())
+            self._stop()
 
     def _child(self, stdout, pingout, broadcastin):
         os.set_blocking(pingout, False)
