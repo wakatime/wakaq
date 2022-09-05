@@ -129,7 +129,7 @@ class Worker:
 
         log.info("finished forking all workers")
 
-        while not self._stop_processing:
+        while len(self.children) > 0:
             try:
                 self._pubsub = self.wakaq.broker.pubsub()
                 self._pubsub.subscribe(self.wakaq.broadcast_key)
@@ -153,7 +153,7 @@ class Worker:
 
             except:
                 log.error(traceback.format_exc())
-                time.sleep(10)
+                self._stop()
 
     def _child(self, stdout, pingout, broadcastin):
         os.set_blocking(pingout, False)
