@@ -18,7 +18,7 @@ Want more features like rate limiting, task deduplication, etc? Too bad, feature
 
     pip install wakaq
 
-## Example
+## Using
 
 ```python
 import logging
