@@ -73,6 +73,7 @@ class WakaQ:
         self.queues = list(map(lambda q: self._default_priority(q, lowest_priority.priority), self.queues))
         self.queues.sort(key=lambda q: q.priority)
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
+        self.queues_by_key = dict([(x.broker_key, x) for x in self.queues])
         self.exclude_queues = self._validate_queue_names(exclude_queues)
         self.default_max_retries = int(default_max_retries or 0)
         self.broker_keys = [x.broker_key for x in self.queues if x.name not in self.exclude_queues]

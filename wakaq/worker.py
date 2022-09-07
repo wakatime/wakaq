@@ -200,7 +200,7 @@ class Worker:
             while not self._stop_processing:
                 self._send_ping_to_parent()
                 try:
-                    queue_name, payload = self.wakaq._blocking_dequeue()
+                    queue_broker_key, payload = self.wakaq._blocking_dequeue()
                 except SoftTimeout:
                     payload = None
                 if payload is not None:
@@ -210,19 +210,23 @@ class Worker:
                         self._execute_task(task, payload)
                     except SoftTimeout:
                         retry += 1
+                        queue = self.wakaq.queues_by_key[queue_broker_key]
                         max_retries = task.max_retries
                         if max_retries is None:
-                            queue = self.wakaq.queues_by_name[queue_name]
                             max_retries = (
                                 queue.default_max_retries
                                 if queue.default_max_retries is not None
                                 else self.wakaq.default_max_retries
                             )
                         if retry > max_retries:
-                            raise
-                        self.wakaq._enqueue_at_end(
-                            task.name, queue_name, payload["args"], payload["kwargs"], retry=retry
-                        )
+                            log.error(traceback.format_exc())
+                        else:
+                            log.warning(traceback.format_exc())
+                            self.wakaq._enqueue_at_end(
+                                task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
+                            )
+                    except:
+                        log.error(traceback.format_exc())
                 else:
                     self._send_ping_to_parent()
                 flush_fh(sys.stdout)
@@ -304,8 +308,6 @@ class Worker:
                 self.wakaq.wrap_tasks_function(task.fn)(*payload["args"], **payload["kwargs"])
             else:
                 task.fn(*payload["args"], **payload["kwargs"])
-        except:
-            log.error(traceback.format_exc())
         finally:
             current_task.set(None)
             self._send_ping_to_parent()
@@ -331,7 +333,13 @@ class Worker:
                     if max_retries is None:
                         max_retries = self.wakaq.default_max_retries
                     if retry > max_retries:
-                        raise
+                        log.error(traceback.format_exc())
+                        break
+                    else:
+                        log.warning(traceback.format_exc())
+                except:
+                    log.error(traceback.format_exc())
+                    break
 
     def _read_child_logs(self):
         for child in self.children:
