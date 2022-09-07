@@ -10,8 +10,7 @@ all:
 test:
 	@pytest
 
-release:
-	clean build upload
+release: clean build upload
 
 clean:
 	@rm dist/*
