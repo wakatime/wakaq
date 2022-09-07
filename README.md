@@ -108,6 +108,8 @@ if __name__ == '__main__':
 
 #### Optimizing
 
+See the [WakaQ init params][wakaq init] for a full list of options, like Redis host and Redis socket timeout values.
+
 When using in production, make sure to [increase the max open ports][max open ports] allowed for your Redis server process.
 
 When using eta tasks a Redis sorted set is used, so eta tasks are automatically deduped based on task name, args, and kwargs.
@@ -143,4 +145,5 @@ Create a file at `/etc/systemd/system/wakaqworker.service` with the above conten
 [broadcast]: https://github.com/wakatime/wakaq/blob/761d08f06d7d88941491e48d1cb524a1c35788ad/wakaq/task.py#L47
 [soft timeout]: https://github.com/wakatime/wakaq/blob/761d08f06d7d88941491e48d1cb524a1c35788ad/wakaq/exceptions.py#L8
 [hard timeout]: https://github.com/wakatime/wakaq/blob/761d08f06d7d88941491e48d1cb524a1c35788ad/wakaq/worker.py#L370
+[wakaq init]: https://github.com/wakatime/wakaq/blob/a11d22b6a743e4fb0e220673085297bdc4aab710/wakaq/__init__.py#L49
 [max open ports]: https://wakatime.com/blog/47-maximize-your-concurrent-web-server-connections
