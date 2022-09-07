@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.0.3 (2022-09-07)
+
+#### Bugfix
+
+- Ignore SoftTimeout when waiting on BLPOP from Redis list.
+
 ## 1.0.2 (2022-09-05)
 
 #### Bugfix
