@@ -199,7 +199,10 @@ class Worker:
             self._num_tasks_processed = 0
             while not self._stop_processing:
                 self._send_ping_to_parent()
-                queue_name, payload = self.wakaq._blocking_dequeue()
+                try:
+                    queue_name, payload = self.wakaq._blocking_dequeue()
+                except SoftTimeout:
+                    payload = None
                 if payload is not None:
                     task = self.wakaq.tasks[payload["name"]]
                     retry = payload.get("retry") or 0
