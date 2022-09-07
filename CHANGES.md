@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.0.4 (2022-09-07)
+
+#### Bugfix
+
+- Fix auto retrying tasks on soft timeout.
+
 ## 1.0.3 (2022-09-07)
 
 #### Bugfix
