@@ -143,10 +143,10 @@ Create a file at `/etc/systemd/system/wakaqworker.service` with the above conten
 
 
 
-[broadcast]: https://github.com/wakatime/wakaq/blob/46cfad4884b586c02d9536ebf2d983cac6157827/wakaq/task.py#L47
-[soft timeout]: https://github.com/wakatime/wakaq/blob/46cfad4884b586c02d9536ebf2d983cac6157827/wakaq/exceptions.py#L8
-[hard timeout]: https://github.com/wakatime/wakaq/blob/46cfad4884b586c02d9536ebf2d983cac6157827/wakaq/worker.py#L386
-[wakaq init]: https://github.com/wakatime/wakaq/blob/46cfad4884b586c02d9536ebf2d983cac6157827/wakaq/__init__.py#L49
+[broadcast]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/task.py#L47
+[soft timeout]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/exceptions.py#L8
+[hard timeout]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/worker.py#L400
+[wakaq init]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/__init__.py#L49
 [max open ports]: https://wakatime.com/blog/47-maximize-your-concurrent-web-server-connections
 [blog launch]: https://wakatime.com/blog/56-building-a-distributed-task-queue-in-python
 [hacker news]: https://news.ycombinator.com/item?id=32730038
