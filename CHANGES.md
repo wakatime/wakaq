@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.0.5 (2022-09-08)
+
+#### Bugfix
+
+- Make sure logging has current task set.
+
 ## 1.0.4 (2022-09-07)
 
 #### Bugfix
