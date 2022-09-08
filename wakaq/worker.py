@@ -204,32 +204,42 @@ class Worker:
                 except SoftTimeout:
                     payload = None
                 if payload is not None:
-                    task = self.wakaq.tasks[payload["name"]]
-                    current_task.set((task, payload))
-                    retry = payload.get("retry") or 0
                     try:
-                        self._execute_task(task, payload)
-                    except SoftTimeout:
-                        retry += 1
-                        queue = self.wakaq.queues_by_key[queue_broker_key]
-                        max_retries = task.max_retries
-                        if max_retries is None:
-                            max_retries = (
-                                queue.default_max_retries
-                                if queue.default_max_retries is not None
-                                else self.wakaq.default_max_retries
-                            )
-                        if retry > max_retries:
+                        task = self.wakaq.tasks[payload["name"]]
+                    except KeyError:
+                        log.error(f'Task not found: {payload["name"]}')
+                        task = None
+
+                    if task is not None:
+                        current_task.set((task, payload))
+                        retry = payload.get("retry") or 0
+                        try:
+                            self._execute_task(task, payload)
+                        except SoftTimeout:
+                            retry += 1
+                            queue = self.wakaq.queues_by_key[queue_broker_key]
+                            max_retries = task.max_retries
+                            if max_retries is None:
+                                max_retries = (
+                                    queue.default_max_retries
+                                    if queue.default_max_retries is not None
+                                    else self.wakaq.default_max_retries
+                                )
+                            if retry > max_retries:
+                                log.error(traceback.format_exc())
+                            else:
+                                log.warning(traceback.format_exc())
+                                self.wakaq._enqueue_at_end(
+                                    task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
+                                )
+                        except:
                             log.error(traceback.format_exc())
-                        else:
-                            log.warning(traceback.format_exc())
-                            self.wakaq._enqueue_at_end(
-                                task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
-                            )
-                    except:
-                        log.error(traceback.format_exc())
-                    finally:
-                        current_task.set(None)
+                        finally:
+                            current_task.set(None)
+
+                    else:
+                        self._send_ping_to_parent()
+
                 else:
                     self._send_ping_to_parent()
                 flush_fh(sys.stdout)
@@ -322,7 +332,11 @@ class Worker:
             return
         for payload in payloads.splitlines():
             payload = deserialize(payload)
-            task = self.wakaq.tasks[payload["name"]]
+            try:
+                task = self.wakaq.tasks[payload["name"]]
+            except KeyError:
+                log.error(f'Task not found: {payload["name"]}')
+                continue
             retry = 0
             current_task.set((task, payload))
             try:
