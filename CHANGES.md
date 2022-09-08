@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.0.6 (2022-09-08)
+
+#### Bugfix
+
+- Prevent unknown task crashing worker process.
+
 ## 1.0.5 (2022-09-08)
 
 #### Bugfix
