@@ -205,6 +205,7 @@ class Worker:
                     payload = None
                 if payload is not None:
                     task = self.wakaq.tasks[payload["name"]]
+                    current_task.set((task, payload))
                     retry = payload.get("retry") or 0
                     try:
                         self._execute_task(task, payload)
@@ -227,6 +228,8 @@ class Worker:
                             )
                     except:
                         log.error(traceback.format_exc())
+                    finally:
+                        current_task.set(None)
                 else:
                     self._send_ping_to_parent()
                 flush_fh(sys.stdout)
@@ -299,7 +302,6 @@ class Worker:
 
     def _execute_task(self, task, payload):
         self._send_ping_to_parent()
-        current_task.set((task, payload))
         log.debug(f"running with payload {payload}")
         if self.wakaq.before_task_started_callback:
             self.wakaq.before_task_started_callback()
@@ -309,7 +311,6 @@ class Worker:
             else:
                 task.fn(*payload["args"], **payload["kwargs"])
         finally:
-            current_task.set(None)
             self._send_ping_to_parent()
             self._num_tasks_processed += 1
             if self.wakaq.after_task_finished_callback:
@@ -323,23 +324,27 @@ class Worker:
             payload = deserialize(payload)
             task = self.wakaq.tasks[payload["name"]]
             retry = 0
-            while True:
-                try:
-                    self._execute_task(task, payload)
-                    break
-                except SoftTimeout:
-                    retry += 1
-                    max_retries = task.max_retries
-                    if max_retries is None:
-                        max_retries = self.wakaq.default_max_retries
-                    if retry > max_retries:
+            current_task.set((task, payload))
+            try:
+                while True:
+                    try:
+                        self._execute_task(task, payload)
+                        break
+                    except SoftTimeout:
+                        retry += 1
+                        max_retries = task.max_retries
+                        if max_retries is None:
+                            max_retries = self.wakaq.default_max_retries
+                        if retry > max_retries:
+                            log.error(traceback.format_exc())
+                            break
+                        else:
+                            log.warning(traceback.format_exc())
+                    except:
                         log.error(traceback.format_exc())
                         break
-                    else:
-                        log.warning(traceback.format_exc())
-                except:
-                    log.error(traceback.format_exc())
-                    break
+            finally:
+                current_task.set(None)
 
     def _read_child_logs(self):
         for child in self.children:
