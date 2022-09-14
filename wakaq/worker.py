@@ -44,6 +44,7 @@ class Child:
         "last_ping",
         "soft_timeout_reached",
         "done",
+        "current_task",
     ]
 
     def __init__(self, pid, stdin, pingin, broadcastout):
@@ -258,8 +259,8 @@ class Worker:
             close_fd(self._stdout)
             close_fd(self._pingout)
 
-    def _send_ping_to_parent(self):
-        write_fd_or_raise(self._pingout, ".")
+    def _send_ping_to_parent(self, task_name=None):
+        write_fd_or_raise(self._pingout, f"{task_name or ''}\n")
 
     def _add_child(self, pid, stdin, pingin, broadcastout):
         self.children.append(Child(pid, stdin, pingin, broadcastout))
@@ -309,7 +310,7 @@ class Worker:
                 self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
     def _execute_task(self, task, payload):
-        self._send_ping_to_parent()
+        self._send_ping_to_parent(task_name=task["name"])
         log.debug(f"running with payload {payload}")
         if self.wakaq.before_task_started_callback:
             self.wakaq.before_task_started_callback()
@@ -392,13 +393,26 @@ class Worker:
             if ping != "":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
-            elif self.wakaq.soft_timeout or self.wakaq.hard_timeout:
-                runtime = time.time() - child.last_ping
-                if self.wakaq.hard_timeout and runtime > self.wakaq.hard_timeout:
-                    kill(child.pid, signal.SIGKILL)
-                elif not child.soft_timeout_reached and self.wakaq.soft_timeout and runtime > self.wakaq.soft_timeout:
-                    child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
-                    kill(child.pid, signal.SIGQUIT)
+                ping = ping.split("\n")
+                if len(ping) > 0 and ping[-1]:
+                    task_name, queue_name = ping[-1].split(":")
+                    task = self.wakaq.tasks[task_name]
+                    queue = self.wakaq.queues_by_name[queue_name]
+                    child.soft_timeout = task.soft_timeout or queue.soft_timeout or self.wakaq.soft_timeout
+                    child.hard_timeout = task.hard_timeout or queue.hard_timeout or self.wakaq.hard_timeout
+                else:
+                    child.soft_timeout = self.wakaq.soft_timeout
+                    child.hard_timeout = self.wakaq.hard_timeout
+            else:
+                soft_timeout = child.soft_timeout or self.wakaq.soft_timeout
+                hard_timeout = child.hard_timeout or self.wakaq.hard_timeout
+                if soft_timeout or hard_timeout:
+                    runtime = time.time() - child.last_ping
+                    if hard_timeout and runtime > hard_timeout:
+                        kill(child.pid, signal.SIGKILL)
+                    elif not child.soft_timeout_reached and soft_timeout and runtime > soft_timeout:
+                        child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
+                        kill(child.pid, signal.SIGQUIT)
 
     def _listen_for_broadcast_task(self):
         msg = self._pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)

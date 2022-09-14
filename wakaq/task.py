@@ -12,10 +12,12 @@ class Task:
         "fn",
         "wakaq",
         "queue",
+        "soft_timeout",
+        "hard_timeout",
         "max_retries",
     ]
 
-    def __init__(self, fn=None, wakaq=None, queue=None, max_retries=None):
+    def __init__(self, fn=None, wakaq=None, queue=None, soft_timeout=None, hard_timeout=None, max_retries=None):
         self.name = fn.__name__
         self.wakaq = wakaq
         if queue:
@@ -23,6 +25,8 @@ class Task:
         else:
             self.queue = None
 
+        self.soft_timeout = int(soft_timeout) if soft_timeout else None
+        self.hard_timeout = int(hard_timeout) if hard_timeout else None
         self.max_retries = int(max_retries) if max_retries else None
 
         @wraps(fn)

@@ -9,16 +9,36 @@ class Queue:
         "name",
         "priority",
         "prefix",
+        "soft_timeout",
+        "hard_timeout",
         "max_retries",
     ]
 
-    def __init__(self, name=None, priority=-1, prefix=None, max_retries=None):
+    def __init__(self, name=None, priority=-1, prefix=None, soft_timeout=None, hard_timeout=None, max_retries=None):
         self.prefix = re.sub(r"[^a-zA-Z0-9_.-]", "", prefix or "wakaq")
         self.name = re.sub(r"[^a-zA-Z0-9_.-]", "", name)
+
         try:
             self.priority = int(priority)
         except:
             raise Exception(f"Invalid queue priority: {priority}")
+
+        if soft_timeout:
+            try:
+                self.soft_timeout = int(soft_timeout)
+            except:
+                raise Exception(f"Invalid queue soft timeout: {soft_timeout}")
+        else:
+            self.soft_timeout = None
+
+        if hard_timeout:
+            try:
+                self.hard_timeout = int(hard_timeout)
+            except:
+                raise Exception(f"Invalid queue hard timeout: {hard_timeout}")
+        else:
+            self.hard_timeout = None
+
         if max_retries:
             try:
                 self.max_retries = int(max_retries)

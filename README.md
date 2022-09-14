@@ -36,7 +36,7 @@ wakaq = WakaQ(
         (1, 'a-medium-priority-queue'),
         (2, 'a-low-priority-queue'),
         'default-lowest-priority-queue',
-        Queue('another-queue', priority=3, max_retries=5),
+        Queue('another-queue', priority=3, max_retries=5, soft_timeout=300, hard_timeout=360),
     ],
 
     # Number of worker processes. Must be an int or str which evaluates to an
@@ -79,7 +79,7 @@ wakaq = WakaQ(
 )
 
 
-@wakaq.task(queue='a-medium-priority-queue', max_retries=7)
+@wakaq.task(queue='a-medium-priority-queue', max_retries=7, soft_timeout=420, hard_timeout=480)
 def mytask(x, y):
     print(x + y)
 
