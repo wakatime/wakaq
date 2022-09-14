@@ -313,7 +313,7 @@ class Worker:
                 self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
     def _execute_task(self, task, payload):
-        self._send_ping_to_parent(task_name=task["name"])
+        self._send_ping_to_parent(task_name=task.name)
         log.debug(f"running with payload {payload}")
         if self.wakaq.before_task_started_callback:
             self.wakaq.before_task_started_callback()
