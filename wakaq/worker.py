@@ -221,9 +221,7 @@ class Worker:
                             max_retries = task.max_retries
                             if max_retries is None:
                                 max_retries = (
-                                    queue.default_max_retries
-                                    if queue.default_max_retries is not None
-                                    else self.wakaq.default_max_retries
+                                    queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
                                 )
                             if retry > max_retries:
                                 log.error(traceback.format_exc())
@@ -348,7 +346,7 @@ class Worker:
                         retry += 1
                         max_retries = task.max_retries
                         if max_retries is None:
-                            max_retries = self.wakaq.default_max_retries
+                            max_retries = self.wakaq.max_retries
                         if retry > max_retries:
                             log.error(traceback.format_exc())
                             break

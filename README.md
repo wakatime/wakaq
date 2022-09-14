@@ -36,7 +36,7 @@ wakaq = WakaQ(
         (1, 'a-medium-priority-queue'),
         (2, 'a-low-priority-queue'),
         'default-lowest-priority-queue',
-        Queue('another-queue', priority=3, default_max_retries=5),
+        Queue('another-queue', priority=3, max_retries=5),
     ],
 
     # Number of worker processes. Must be an int or str which evaluates to an
@@ -51,10 +51,10 @@ wakaq = WakaQ(
     hard_timeout=timedelta(minutes=1),
 
     # If the task soft timeouts, retry up to 3 times. Max retries comes first
-    # from the task decorator if set, next from the Queue's default_max_retries,
-    # lastly from the option below. If No default_max_retries is found, the task
+    # from the task decorator if set, next from the Queue's max_retries,
+    # lastly from the option below. If No max_retries is found, the task
     # is not retried on a soft timeout.
-    default_max_retries=3,
+    max_retries=3,
 
     # Combat memory leaks by reloading a worker (the one using the most RAM),
     # when the total machine RAM usage is at or greater than 98%.

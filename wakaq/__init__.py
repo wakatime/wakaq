@@ -28,7 +28,7 @@ class WakaQ:
     concurrency = 0
     schedules = []
     exclude_queues = []
-    default_max_retries = None
+    max_retries = None
     wait_timeout = None
     max_mem_percent = None
     max_tasks_per_worker = None
@@ -54,7 +54,7 @@ class WakaQ:
         port=6379,
         concurrency=0,
         exclude_queues=[],
-        default_max_retries=None,
+        max_retries=None,
         soft_timeout=None,
         hard_timeout=None,
         max_mem_percent=None,
@@ -75,7 +75,7 @@ class WakaQ:
         self.queues_by_name = dict([(x.name, x) for x in self.queues])
         self.queues_by_key = dict([(x.broker_key, x) for x in self.queues])
         self.exclude_queues = self._validate_queue_names(exclude_queues)
-        self.default_max_retries = int(default_max_retries or 0)
+        self.max_retries = int(max_retries or 0)
         self.broker_keys = [x.broker_key for x in self.queues if x.name not in self.exclude_queues]
         self.schedules = [CronTask.create(x) for x in schedules]
         self.concurrency = self._format_concurrency(concurrency)

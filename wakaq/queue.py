@@ -9,23 +9,23 @@ class Queue:
         "name",
         "priority",
         "prefix",
-        "default_max_retries",
+        "max_retries",
     ]
 
-    def __init__(self, name=None, priority=-1, prefix=None, default_max_retries=None):
+    def __init__(self, name=None, priority=-1, prefix=None, max_retries=None):
         self.prefix = re.sub(r"[^a-zA-Z0-9_.-]", "", prefix or "wakaq")
         self.name = re.sub(r"[^a-zA-Z0-9_.-]", "", name)
         try:
             self.priority = int(priority)
         except:
             raise Exception(f"Invalid queue priority: {priority}")
-        if default_max_retries:
+        if max_retries:
             try:
-                self.default_max_retries = int(default_max_retries)
+                self.max_retries = int(max_retries)
             except:
-                raise Exception(f"Invalid queue default max retries: {default_max_retries}")
+                raise Exception(f"Invalid queue max retries: {max_retries}")
         else:
-            self.default_max_retries = None
+            self.max_retries = None
 
     @classmethod
     def create(cls, obj, queues_by_name=None):
