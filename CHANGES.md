@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.1 (2022-09-14)
+
+#### Bugfix
+
+- Add missing child timeout class attributes.
+
 ## 1.1.0 (2022-09-14)
 
 #### Feature
