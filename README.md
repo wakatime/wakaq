@@ -44,10 +44,11 @@ wakaq = WakaQ(
     # the current machine.
     concurrency="cores*4",
 
-    # Raise SoftTimeout in a task if it runs longer than 30 seconds.
+    # Raise SoftTimeout in a task if it runs longer than 30 seconds. Can also be set per
+    # task or queue. If no soft timeout set, tasks can run forever.
     soft_timeout=30,  # seconds
 
-    # SIGKILL a task if it runs longer than 1 minute.
+    # SIGKILL a task if it runs longer than 1 minute. Can be set per task or queue.
     hard_timeout=timedelta(minutes=1),
 
     # If the task soft timeouts, retry up to 3 times. Max retries comes first
