@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.0 (2022-09-14)
+
+#### Feature
+
+- Ability to overwrite timeouts per task or queue.
+
 ## 1.0.6 (2022-09-08)
 
 #### Bugfix
