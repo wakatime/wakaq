@@ -44,7 +44,8 @@ class Child:
         "last_ping",
         "soft_timeout_reached",
         "done",
-        "current_task",
+        "soft_timeout",
+        "hard_timeout",
     ]
 
     def __init__(self, pid, stdin, pingin, broadcastout):
@@ -58,6 +59,8 @@ class Child:
         self.soft_timeout_reached = False
         self.last_ping = time.time()
         self.done = False
+        self.soft_timeout = None
+        self.hard_timeout = None
 
     def close(self):
         close_fd(self.pingin)
