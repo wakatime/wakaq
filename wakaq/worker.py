@@ -67,6 +67,18 @@ class Child:
         close_fd(self.stdin)
         close_fd(self.broadcastout)
 
+    def set_timeouts(self, wakaq, task=None, queue=None):
+        self.soft_timeout = wakaq.soft_timeout
+        self.hard_timeout = wakaq.hard_timeout
+        if task and task.soft_timeout:
+            self.soft_timeout = task.soft_timeout
+        elif queue and queue.soft_timeout:
+            self.soft_timeout = queue.soft_timeout
+        if task and task.hard_timeout:
+            self.hard_timeout = task.hard_timeout
+        elif queue and queue.hard_timeout:
+            self.hard_timeout = queue.hard_timeout
+
 
 class Worker:
     __slots__ = [
@@ -401,15 +413,12 @@ class Worker:
                 child.soft_timeout_reached = False
                 ping = ping[:-1] if ping[-1] == "\n" else ping
                 ping = ping.rsplit("\n", 1)[-1]
+                task, queue = None, None
                 if ping != "":
                     task_name, queue_name = ping.split(":", 1)
                     task = self.wakaq.tasks[task_name]
-                    queue = self.wakaq.queues_by_name[queue_name]
-                    child.soft_timeout = task.soft_timeout or queue.soft_timeout or self.wakaq.soft_timeout
-                    child.hard_timeout = task.hard_timeout or queue.hard_timeout or self.wakaq.hard_timeout
-                else:
-                    child.soft_timeout = self.wakaq.soft_timeout
-                    child.hard_timeout = self.wakaq.hard_timeout
+                    queue = self.wakaq.queues_by_name.get(queue_name)
+                child.set_timeouts(self, self.wakaq, task=task, queue=queue)
             else:
                 soft_timeout = child.soft_timeout or self.wakaq.soft_timeout
                 hard_timeout = child.hard_timeout or self.wakaq.hard_timeout
