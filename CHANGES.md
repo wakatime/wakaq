@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.8 (2022-09-15)
+
+#### Bugfix
+
+- Ignore SoftTimeout in child when not processing any task.
+
 ## 1.1.7 (2022-09-15)
 
 #### Bugfix
