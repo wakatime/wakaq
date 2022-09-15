@@ -120,9 +120,9 @@ class WakaQ:
             socket_connect_timeout=socket_connect_timeout,
         )
 
-    def task(self, fn=None, queue=None, max_retries=None):
+    def task(self, fn=None, queue=None, max_retries=None, soft_timeout=None, hard_timeout=None):
         def wrap(f):
-            t = Task(fn=f, wakaq=self, queue=queue, max_retries=max_retries)
+            t = Task(fn=f, wakaq=self, queue=queue, max_retries=max_retries, soft_timeout=soft_timeout, hard_timeout=hard_timeout)
             if t.name in self.tasks:
                 raise Exception(f"Duplicate task name: {t.name}")
             self.tasks[t.name] = t
