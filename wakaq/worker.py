@@ -215,13 +215,13 @@ class Worker:
                         task = None
 
                     if task is not None:
+                        queue = self.wakaq.queues_by_key[queue_broker_key]
                         current_task.set((task, payload))
                         retry = payload.get("retry") or 0
                         try:
-                            self._execute_task(task, payload)
+                            self._execute_task(task, payload, queue=queue)
                         except SoftTimeout:
                             retry += 1
-                            queue = self.wakaq.queues_by_key[queue_broker_key]
                             max_retries = task.max_retries
                             if max_retries is None:
                                 max_retries = (
@@ -262,8 +262,11 @@ class Worker:
             close_fd(self._stdout)
             close_fd(self._pingout)
 
-    def _send_ping_to_parent(self, task_name=None):
-        write_fd_or_raise(self._pingout, f"{task_name or ''}\n")
+    def _send_ping_to_parent(self, task_name=None, queue_name=None):
+        msg = task_name or ""
+        if msg:
+            msg = f"{msg}:{queue_name or ''}"
+        write_fd_or_raise(self._pingout, f"{msg}\n")
 
     def _add_child(self, pid, stdin, pingin, broadcastout):
         self.children.append(Child(pid, stdin, pingin, broadcastout))
@@ -312,8 +315,8 @@ class Worker:
                 kwargs = payload.pop("kwargs")
                 self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
-    def _execute_task(self, task, payload):
-        self._send_ping_to_parent(task_name=task.name)
+    def _execute_task(self, task, payload, queue=None):
+        self._send_ping_to_parent(task_name=task.name, queue_name=queue.name if queue else None)
         log.debug(f"running with payload {payload}")
         if self.wakaq.before_task_started_callback:
             self.wakaq.before_task_started_callback()
@@ -396,9 +399,10 @@ class Worker:
             if ping != "":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
-                ping = ping.split("\n")
-                if len(ping) > 0 and ping[-1]:
-                    task_name, queue_name = ping[-1].split(":")
+                ping = ping[:-1] if ping[-1] == "\n" else ping
+                ping = ping.rsplit("\n", 1)[-1]
+                if ping != "":
+                    task_name, queue_name = ping.split(":", 1)
                     task = self.wakaq.tasks[task_name]
                     queue = self.wakaq.queues_by_name[queue_name]
                     child.soft_timeout = task.soft_timeout or queue.soft_timeout or self.wakaq.soft_timeout
