@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.3 (2022-09-15)
+
+#### Bugfix
+
+- Fix sending task and queue to parent process.
+
 ## 1.1.2 (2022-09-14)
 
 #### Bugfix
