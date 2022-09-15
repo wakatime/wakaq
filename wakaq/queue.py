@@ -2,6 +2,7 @@
 
 
 import re
+from datetime import timedelta
 
 
 class Queue:
@@ -23,21 +24,8 @@ class Queue:
         except:
             raise Exception(f"Invalid queue priority: {priority}")
 
-        if soft_timeout:
-            try:
-                self.soft_timeout = int(soft_timeout)
-            except:
-                raise Exception(f"Invalid queue soft timeout: {soft_timeout}")
-        else:
-            self.soft_timeout = None
-
-        if hard_timeout:
-            try:
-                self.hard_timeout = int(hard_timeout)
-            except:
-                raise Exception(f"Invalid queue hard timeout: {hard_timeout}")
-        else:
-            self.hard_timeout = None
+        self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
+        self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
 
         if self.soft_timeout and self.hard_timeout and self.hard_timeout <= self.soft_timeout:
             raise Exception(

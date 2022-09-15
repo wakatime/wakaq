@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+from datetime import timedelta
 from functools import wraps
 
 from .queue import Queue
@@ -25,8 +26,8 @@ class Task:
         else:
             self.queue = None
 
-        self.soft_timeout = int(soft_timeout) if soft_timeout else None
-        self.hard_timeout = int(hard_timeout) if hard_timeout else None
+        self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
+        self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
 
         if self.soft_timeout and self.hard_timeout and self.hard_timeout <= self.soft_timeout:
             raise Exception(
