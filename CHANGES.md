@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.7 (2022-09-15)
+
+#### Bugfix
+
+- Allow custom timeouts defined on task decorator.
+
 ## 1.1.6 (2022-09-15)
 
 #### Bugfix
