@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.6 (2022-09-15)
+
+#### Bugfix
+
+- All timeouts should accept timedelta or int seconds.
+
 ## 1.1.5 (2022-09-15)
 
 #### Bugfix
