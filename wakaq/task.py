@@ -27,6 +27,12 @@ class Task:
 
         self.soft_timeout = int(soft_timeout) if soft_timeout else None
         self.hard_timeout = int(hard_timeout) if hard_timeout else None
+
+        if self.soft_timeout and self.hard_timeout and self.hard_timeout <= self.soft_timeout:
+            raise Exception(
+                f"Task hard timeout ({self.hard_timeout}) can not be less than or equal to soft timeout ({self.soft_timeout})."
+            )
+
         self.max_retries = int(max_retries) if max_retries else None
 
         @wraps(fn)
