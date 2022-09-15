@@ -13,7 +13,7 @@ test:
 release: clean build upload
 
 clean:
-	@rm dist/*
+	@rm -f dist/*
 
 build:
 	@python ./setup.py sdist
