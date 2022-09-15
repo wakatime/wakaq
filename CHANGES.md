@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.1.4 (2022-09-15)
+
+#### Bugfix
+
+- Fix setting task and queue on child from ping.
+
 ## 1.1.3 (2022-09-15)
 
 #### Bugfix
