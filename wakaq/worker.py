@@ -418,7 +418,7 @@ class Worker:
                     task_name, queue_name = ping.split(":", 1)
                     task = self.wakaq.tasks[task_name]
                     queue = self.wakaq.queues_by_name.get(queue_name)
-                child.set_timeouts(self, self.wakaq, task=task, queue=queue)
+                child.set_timeouts(self.wakaq, task=task, queue=queue)
             else:
                 soft_timeout = child.soft_timeout or self.wakaq.soft_timeout
                 hard_timeout = child.hard_timeout or self.wakaq.hard_timeout
