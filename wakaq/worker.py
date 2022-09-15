@@ -215,10 +215,7 @@ class Worker:
             self._num_tasks_processed = 0
             while not self._stop_processing:
                 self._send_ping_to_parent()
-                try:
-                    queue_broker_key, payload = self.wakaq._blocking_dequeue()
-                except SoftTimeout:
-                    payload = None
+                queue_broker_key, payload = self.wakaq._blocking_dequeue()
                 if payload is not None:
                     try:
                         task = self.wakaq.tasks[payload["name"]]
@@ -262,6 +259,12 @@ class Worker:
                     log.info(f"restarting worker after {self._num_tasks_processed} tasks")
                     self._stop_processing = True
                 flush_fh(sys.stdout)
+
+        # re-raise the timeout if we were processing a task, otherwise just exit and let
+        # parent re-fork another child
+        except SoftTimeout:
+            if current_task.get():
+                raise
 
         except:
             log.error(traceback.format_exc())
