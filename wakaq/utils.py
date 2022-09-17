@@ -2,10 +2,15 @@
 
 
 import ast
+import calendar
 import operator
 import os
 import sys
+from datetime import datetime, timedelta
 from importlib import import_module
+from typing import Union
+
+from .serializer import deserialize
 
 
 def import_app(app):
@@ -26,15 +31,67 @@ def inspect(app):
             "priority": queue.priority,
             "broker_key": queue.broker_key,
             "broker_eta_key": queue.broker_eta_key,
-            "pending_tasks": pending_tasks_in_queue(app, queue),
-            "pending_eta_tasks": pending_eta_tasks_in_queue(app, queue),
+            "pending_tasks": num_pending_tasks_in_queue(app, queue),
+            "pending_eta_tasks": num_pending_eta_tasks_in_queue(app, queue),
         }
     return {
         "queues": queues,
     }
 
 
-def pending_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
+def pending_tasks_in_queue(app, queue=None, queue_name: str = None, limit: int = None) -> list:
+    if not queue:
+        if queue_name is None:
+            return []
+        queue = app.queues_by_name.get(queue_name)
+        if not queue:
+            return []
+    opts = {}
+    if limit:
+        opts["LIMIT"] = limit
+    return app.broker.execute_command("LRANGE", queue.broker_key, 0, -1, **opts)
+
+
+def pending_eta_tasks_in_queue(
+    app,
+    queue=None,
+    queue_name: str = None,
+    before: Union[datetime, timedelta, int] = None,
+    limit: int = None,
+) -> list:
+    if not queue:
+        if queue_name is None:
+            return []
+        queue = app.queues_by_name.get(queue_name)
+        if not queue:
+            return []
+    params = []
+    if before:
+        cmd = "ZRANGEBYSCORE"
+        if isinstance(before, timedelta):
+            before = datetime.utcnow() + before
+        if isinstance(before, datetime):
+            before = calendar.timegm(before.utctimetuple())
+        params.extend([0, before])
+        params.append("WITHSCORES")
+        if limit:
+            params.extend(["LIMIT", 0, limit])
+    else:
+        cmd = "ZRANGE"
+        if not limit:
+            limit = 0
+        params.extend([0, limit - 1])
+        params.append("WITHSCORES")
+    tasks = app.broker.execute_command(cmd, queue.broker_eta_key, *params)
+    payloads = []
+    for n in range(0, len(tasks), 2):
+        payload = deserialize(tasks[n])
+        payload["eta"] = datetime.utcfromtimestamp(int(tasks[n + 1]))
+        payloads.append(payload)
+    return payloads
+
+
+def num_pending_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
     if not queue:
         if queue_name is None:
             return 0
@@ -44,7 +101,7 @@ def pending_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
     return app.broker.llen(queue.broker_key)
 
 
-def pending_eta_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
+def num_pending_eta_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
     if not queue:
         if queue_name is None:
             return 0
