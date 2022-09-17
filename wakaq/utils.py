@@ -46,10 +46,12 @@ def pending_tasks_in_queue(app, queue=None, queue_name: str = None, limit: int =
         queue = app.queues_by_name.get(queue_name)
         if not queue:
             return []
-    opts = {}
-    if limit:
-        opts["LIMIT"] = limit
-    return app.broker.execute_command("LRANGE", queue.broker_key, 0, -1, **opts)
+
+    if not limit:
+        limit = 0
+
+    tasks = app.broker.lrange(queue.broker_key, 0, limit - 1)
+    return [deserialize(task) for task in tasks]
 
 
 def pending_eta_tasks_in_queue(
