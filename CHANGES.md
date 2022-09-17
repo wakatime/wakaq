@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.2.0 (2022-09-17)
+
+#### Feature
+
+- Util functions to peek at tasks in queues.
+
 ## 1.1.8 (2022-09-15)
 
 #### Bugfix
