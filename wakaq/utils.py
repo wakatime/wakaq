@@ -20,6 +20,10 @@ def import_app(app):
     module_path, class_name = app.rsplit(".", 1)
     module = import_module(module_path)
     wakaq = getattr(module, class_name)
+    from . import WakaQ
+
+    if not isinstance(wakaq, WakaQ):
+        raise Exception(f"Invalid app path: {app}. App must point to a WakaQ instance.")
     return wakaq
 
 
