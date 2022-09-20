@@ -1,5 +1,15 @@
 # CHANGES
 
+## 1.2.1 (2022-09-20)
+
+#### Bugfix
+
+- Prevent reading from Redis when no queues defined.
+
+#### Misc
+
+- Improve error message when app path not WakaQ instance.
+
 ## 1.2.0 (2022-09-17)
 
 #### Feature
