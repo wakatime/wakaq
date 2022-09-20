@@ -4,6 +4,7 @@
 import calendar
 import logging
 import multiprocessing
+import time
 from datetime import datetime, timedelta
 
 import redis
@@ -211,6 +212,9 @@ class WakaQ:
         return self.broker.publish(self.broadcast_key, payload)
 
     def _blocking_dequeue(self):
+        if len(self.broker_keys) == 0:
+            time.sleep(self.wait_timeout)
+            return None, None
         data = self.broker.blpop(self.broker_keys, self.wait_timeout)
         if data is None:
             return None, None
