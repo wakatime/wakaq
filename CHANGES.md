@@ -4,7 +4,8 @@
 
 #### Feature
 
-- Add username, password, and db redis connection options. #6
+- Add username, password, and db redis connection options.
+[#6](https://github.com/wakatime/wakaq/issues/6)
 
 ## 1.2.1 (2022-09-20)
 
