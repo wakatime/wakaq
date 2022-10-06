@@ -1,5 +1,11 @@
 # CHANGES
 
+## 1.3.0 (2022-10-05)
+
+#### Feature
+
+- Add username, password, and db redis connection options. #6
+
 ## 1.2.1 (2022-09-20)
 
 #### Bugfix
