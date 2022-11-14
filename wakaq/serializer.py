@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
-import math
-import re
+from base64 import b64decode, b64encode
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from json import JSONDecoder, JSONEncoder, dumps, loads
-
-ISO_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-ISO_DATETIME_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+from json import JSONEncoder, dumps, loads
 
 
 class CustomJSONEncoder(JSONEncoder):
@@ -20,31 +16,56 @@ class CustomJSONEncoder(JSONEncoder):
         if isinstance(o, set):
             return list(o)
         if isinstance(o, Decimal):
-            return float(o)
+            return {
+                "__class__": "Decimal",
+                "value": str(o),
+            }
         if isinstance(o, datetime):
             if o.tzinfo is not None:
                 o = o.astimezone(timezone.utc)
-            return o.strftime("%Y-%m-%dT%H:%M:%SZ")
+            return {
+                "__class__": "datetime",
+                "value": o.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
         if isinstance(o, date):
-            return o.strftime("%Y-%m-%d")
+            return {
+                "__class__": "date",
+                "value": o.strftime("%Y-%m-%d"),
+            }
         if isinstance(o, timedelta):
-            if not o.microseconds:
-                return o.total_seconds()
-            prefix = "-" if o < timedelta(0) else ""
-            left = str(int(math.floor(abs(o).total_seconds())))
-            right = str(abs(o).microseconds).zfill(6)
-            return Decimal(prefix + left + "." + right)
+            return {
+                "__class__": "timedelta",
+                "kwargs": {
+                    "days": o.days,
+                    "seconds": o.seconds,
+                    "microseconds": o.microseconds,
+                },
+            }
+        if isinstance(o, bytes):
+            return {
+                "__class__": "bytes",
+                "value": b64encode(o).decode("ascii"),
+            }
         return str(o)
 
 
-class CustomJSONDecoder(JSONDecoder):
-    def decode(self, obj):
-        if isinstance(obj, str) and ISO_DATETIME_PATTERN.match(str(obj)):
-            return datetime.strptime(str(obj), "%Y-%m-%dT%H:%M:%SZ")
-        elif isinstance(obj, str) and ISO_DATE_PATTERN.match(str(obj)):
-            return datetime.strptime(str(obj), "%Y-%m-%d").date()
-        else:
-            return super().decode(obj)
+def object_hook(obj):
+    cls = obj.get("__class__")
+    if not cls:
+        return obj
+
+    if cls == "Decimal":
+        return Decimal(obj["value"])
+    if cls == "datetime":
+        return datetime.strptime(obj["value"], "%Y-%m-%dT%H:%M:%SZ")
+    if cls == "date":
+        return datetime.strptime(obj["value"], "%Y-%m-%d").date()
+    if cls == "timedelta":
+        return timedelta(**obj["kwargs"])
+    if cls == "bytes":
+        return b64decode(obj["value"])
+
+    return obj
 
 
 def serialize(*args, **kwargs):
@@ -53,5 +74,4 @@ def serialize(*args, **kwargs):
 
 
 def deserialize(*args, **kwargs):
-    kwargs["cls"] = CustomJSONDecoder
-    return loads(*args, **kwargs)
+    return loads(*args, object_hook=object_hook, **kwargs)
