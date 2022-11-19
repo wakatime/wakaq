@@ -1,5 +1,15 @@
 # CHANGES
 
+## 2.0.0 (2022-11-18)
+
+#### Feature
+
+- Support bytes in task arguments.
+
+#### Misc
+
+- Tasks always receive datetimes in UTC without tzinfo.
+
 ## 1.3.0 (2022-10-05)
 
 #### Feature
