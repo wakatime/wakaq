@@ -22,15 +22,25 @@ class CustomJSONEncoder(JSONEncoder):
             }
         if isinstance(o, datetime):
             if o.tzinfo is not None:
+                # tasks always receive datetimes in utc without tzinfo
                 o = o.astimezone(timezone.utc)
             return {
                 "__class__": "datetime",
-                "value": o.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "year": o.year,
+                "month": o.month,
+                "day": o.day,
+                "hour": o.hour,
+                "minute": o.minute,
+                "second": o.second,
+                "microsecond": o.microsecond,
+                "fold": o.fold,
             }
         if isinstance(o, date):
             return {
                 "__class__": "date",
-                "value": o.strftime("%Y-%m-%d"),
+                "year": o.year,
+                "month": o.month,
+                "day": o.day,
             }
         if isinstance(o, timedelta):
             return {
@@ -57,9 +67,22 @@ def object_hook(obj):
     if cls == "Decimal":
         return Decimal(obj["value"])
     if cls == "datetime":
-        return datetime.strptime(obj["value"], "%Y-%m-%dT%H:%M:%SZ")
+        return datetime(
+            year=obj["year"],
+            month=obj["month"],
+            day=obj["day"],
+            hour=obj["hour"],
+            minute=obj["minute"],
+            second=obj["second"],
+            microsecond=obj["microsecond"],
+            fold=obj["fold"],
+        )
     if cls == "date":
-        return datetime.strptime(obj["value"], "%Y-%m-%d").date()
+        return date(
+            year=obj["year"],
+            month=obj["month"],
+            day=obj["day"],
+        )
     if cls == "timedelta":
         return timedelta(**obj["kwargs"])
     if cls == "bytes":
