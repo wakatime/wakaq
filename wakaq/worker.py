@@ -228,8 +228,10 @@ class Worker:
                         queue = self.wakaq.queues_by_key[queue_broker_key]
                         current_task.set((task, payload))
                         retry = payload.get("retry") or 0
+
                         try:
                             self._execute_task(task, payload, queue=queue)
+
                         except SoftTimeout:
                             retry += 1
                             max_retries = task.max_retries
@@ -244,6 +246,7 @@ class Worker:
                                 self.wakaq._enqueue_at_end(
                                     task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
                                 )
+
                         except Exception as e:
                             if exception_in_chain(e, SoftTimeout):
                                 retry += 1
@@ -261,6 +264,10 @@ class Worker:
                                     )
                             else:
                                 log.error(traceback.format_exc())
+
+                        except:  # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                            log.error(traceback.format_exc())
+
                         finally:
                             current_task.set(None)
 
@@ -288,6 +295,9 @@ class Worker:
                     raise
             else:
                 log.error(traceback.format_exc())
+
+        except:  # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+            log.error(traceback.format_exc())
 
         finally:
             sys.stdout = sys.__stdout__
@@ -384,6 +394,7 @@ class Worker:
                     try:
                         self._execute_task(task, payload)
                         break
+
                     except SoftTimeout:
                         retry += 1
                         max_retries = task.max_retries
@@ -394,6 +405,7 @@ class Worker:
                             break
                         else:
                             log.warning(traceback.format_exc())
+
                     except Exception as e:
                         if exception_in_chain(e, SoftTimeout):
                             retry += 1
@@ -408,6 +420,11 @@ class Worker:
                         else:
                             log.error(traceback.format_exc())
                             break
+
+                    except:  # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                        log.error(traceback.format_exc())
+                        break
+
             finally:
                 current_task.set(None)
 
