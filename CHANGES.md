@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.0.2 (2022-12-09)
+
+#### Bugfix
+
+- Make sure to catch system exceptions to prevent worker infinite loops.
+
 ## 2.0.1 (2022-12-09)
 
 #### Bugfix
