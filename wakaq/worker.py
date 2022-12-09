@@ -18,6 +18,7 @@ from .serializer import deserialize
 from .utils import (
     close_fd,
     current_task,
+    exception_in_chain,
     flush_fh,
     kill,
     read_fd,
@@ -243,8 +244,23 @@ class Worker:
                                 self.wakaq._enqueue_at_end(
                                     task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
                                 )
-                        except:
-                            log.error(traceback.format_exc())
+                        except Exception as e:
+                            if exception_in_chain(e, SoftTimeout):
+                                retry += 1
+                                max_retries = task.max_retries
+                                if max_retries is None:
+                                    max_retries = (
+                                        queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
+                                    )
+                                if retry > max_retries:
+                                    log.error(traceback.format_exc())
+                                else:
+                                    log.warning(traceback.format_exc())
+                                    self.wakaq._enqueue_at_end(
+                                        task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
+                                    )
+                            else:
+                                log.error(traceback.format_exc())
                         finally:
                             current_task.set(None)
 
@@ -266,8 +282,12 @@ class Worker:
             if current_task.get():
                 raise
 
-        except:
-            log.error(traceback.format_exc())
+        except Exception as e:
+            if exception_in_chain(e, SoftTimeout):
+                if current_task.get():
+                    raise
+            else:
+                log.error(traceback.format_exc())
 
         finally:
             sys.stdout = sys.__stdout__
@@ -374,9 +394,20 @@ class Worker:
                             break
                         else:
                             log.warning(traceback.format_exc())
-                    except:
-                        log.error(traceback.format_exc())
-                        break
+                    except Exception as e:
+                        if exception_in_chain(e, SoftTimeout):
+                            retry += 1
+                            max_retries = task.max_retries
+                            if max_retries is None:
+                                max_retries = self.wakaq.max_retries
+                            if retry > max_retries:
+                                log.error(traceback.format_exc())
+                                break
+                            else:
+                                log.warning(traceback.format_exc())
+                        else:
+                            log.error(traceback.format_exc())
+                            break
             finally:
                 current_task.set(None)
 
