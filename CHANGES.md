@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.0.1 (2022-12-09)
+
+#### Bugfix
+
+- Always catch SoftTimeout even when nested in exception context.
+
 ## 2.0.0 (2022-11-18)
 
 #### Feature
