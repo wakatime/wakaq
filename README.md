@@ -100,10 +100,18 @@ def custom_task_decorator(fn):
 
 
 if __name__ == '__main__':
+
+    # add 1 plus 1 on a worker somewhere
+    mytask.delay(1, 1)
+
     # add 1 plus 1 on a worker somewhere, overwriting the task's queue from medium to high
     mytask.delay(1, 1, queue='a-high-priority-queue')
-    # add 1 plus 1 on a worker somewhere, running on the default lowest priority queue
+
+    # print hello world on a worker somewhere, running on the default lowest priority queue
     anothertask.delay()
+
+    # print hello world on a worker somewhere, after 10 seconds from now
+    anothertask.delay(eta=timedelta(minutes=10))
 ```
 
 ## Deploying
