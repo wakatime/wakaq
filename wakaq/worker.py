@@ -99,6 +99,10 @@ class Worker:
 
     def start(self):
         setup_logging(self.wakaq)
+        log.debug(f"concurrency={self.wakaq.concurrency}")
+        log.debug(f"soft_timeout={self.wakaq.soft_timeout}")
+        log.debug(f"hard_timeout={self.wakaq.hard_timeout}")
+        log.debug(f"wait_timeout={self.wakaq.wait_timeout}")
         log.info(f"starting {self.wakaq.concurrency} workers")
         self._run()
 
@@ -460,6 +464,7 @@ class Worker:
         for child in self.children:
             ping = read_fd(child.pingin)
             if ping != "":
+                log.debug("received ping from child process {child.pid}")
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
                 ping = ping[:-1] if ping[-1] == "\n" else ping
@@ -476,8 +481,10 @@ class Worker:
                 if soft_timeout or hard_timeout:
                     runtime = time.time() - child.last_ping
                     if hard_timeout and runtime > hard_timeout:
+                        log.debug("child process {child.pid} runtime {runtime} reached hard timeout, sending sigkill")
                         kill(child.pid, signal.SIGKILL)
                     elif not child.soft_timeout_reached and soft_timeout and runtime > soft_timeout:
+                        log.debug("child process {child.pid} runtime {runtime} reached soft timeout, sending sigquit")
                         child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
                         kill(child.pid, signal.SIGQUIT)
 
