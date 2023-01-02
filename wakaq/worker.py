@@ -464,7 +464,7 @@ class Worker:
         for child in self.children:
             ping = read_fd(child.pingin)
             if ping != "":
-                log.debug("received ping from child process {child.pid}")
+                log.debug(f"received ping from child process {child.pid}")
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
                 ping = ping[:-1] if ping[-1] == "\n" else ping
@@ -481,10 +481,10 @@ class Worker:
                 if soft_timeout or hard_timeout:
                     runtime = time.time() - child.last_ping
                     if hard_timeout and runtime > hard_timeout:
-                        log.debug("child process {child.pid} runtime {runtime} reached hard timeout, sending sigkill")
+                        log.debug(f"child process {child.pid} runtime {runtime} reached hard timeout, sending sigkill")
                         kill(child.pid, signal.SIGKILL)
                     elif not child.soft_timeout_reached and soft_timeout and runtime > soft_timeout:
-                        log.debug("child process {child.pid} runtime {runtime} reached soft timeout, sending sigquit")
+                        log.debug(f"child process {child.pid} runtime {runtime} reached soft timeout, sending sigquit")
                         child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
                         kill(child.pid, signal.SIGQUIT)
 
