@@ -139,7 +139,7 @@ ExecStart=/opt/yourapp/venv/bin/python /opt/yourapp/venv/bin/wakaq-worker --app=
 RemainAfterExit=no
 Restart=always
 RestartSec=30s
-KillSignal=SIGQUIT
+KillSignal=SIGINT
 LimitNOFILE=99999
 
 [Install]
