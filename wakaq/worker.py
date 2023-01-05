@@ -99,11 +99,19 @@ class Worker:
 
     def start(self):
         setup_logging(self.wakaq)
-        log.debug(f"concurrency={self.wakaq.concurrency}")
-        log.debug(f"soft_timeout={self.wakaq.soft_timeout}")
-        log.debug(f"hard_timeout={self.wakaq.hard_timeout}")
-        log.debug(f"wait_timeout={self.wakaq.wait_timeout}")
-        log.info(f"starting {self.wakaq.concurrency} workers")
+        log.info(f"concurrency={self.wakaq.concurrency}")
+        log.info(f"soft_timeout={self.wakaq.soft_timeout}")
+        log.info(f"hard_timeout={self.wakaq.hard_timeout}")
+        log.info(f"wait_timeout={self.wakaq.wait_timeout}")
+        log.info(f"exclude_queues={self.wakaq.exclude_queues}")
+        log.info(f"max_retries={self.wakaq.max_retries}")
+        log.info(f"max_mem_percent={self.wakaq.max_mem_percent}")
+        log.info(f"max_tasks_per_worker={self.wakaq.max_tasks_per_worker}")
+        log.info(f"worker_log_file={self.wakaq.worker_log_file}")
+        log.info(f"scheduler_log_file={self.wakaq.scheduler_log_file}")
+        log.info(f"worker_log_level={self.wakaq.worker_log_level}")
+        log.info(f"scheduler_log_level={self.wakaq.scheduler_log_level}")
+        log.info(f"starting {self.wakaq.concurrency} workers...")
         self._run()
 
     def _stop(self):
@@ -130,12 +138,12 @@ class Worker:
         broadcastin, broadcastout = os.pipe()
         stdin, stdout = os.pipe()
         pid = os.fork()
-        if pid == 0:
+        if pid == 0:  # child worker process
             close_fd(stdin)
             close_fd(pingin)
             close_fd(broadcastout)
             self._child(stdout, pingout, broadcastin)
-        else:
+        else:  # parent process
             close_fd(stdout)
             close_fd(pingout)
             close_fd(broadcastin)
