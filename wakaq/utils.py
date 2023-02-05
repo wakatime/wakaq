@@ -40,6 +40,7 @@ def inspect(app):
         }
     return {
         "queues": queues,
+        "workers": num_workers_connected(app),
     }
 
 
@@ -115,6 +116,10 @@ def num_pending_eta_tasks_in_queue(app, queue=None, queue_name: str = None) -> i
         if not queue:
             return 0
     return app.broker.zcount(queue.broker_eta_key, "-inf", "+inf")
+
+
+def num_workers_connected(app) -> int:
+    return app.broker.pubsub_numsub(app.broadcast_key)[0][1]
 
 
 def purge_queue(app, queue_name: str):
