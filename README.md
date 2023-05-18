@@ -1,6 +1,7 @@
 # ![logo](https://raw.githubusercontent.com/wakatime/wakaq/main/wakatime-logo.png "WakaQ") WakaQ
 Distributed background task queue for Python backed by Redis, a super minimal Celery.
 Read about the motivation behind this project on [this blog post][blog launch] and the accompanying [Hacker News discussion][hacker news].
+WakaQ is currently used in production at [WakaTime.com][wakatime].
 
 ## Features
 
@@ -152,6 +153,7 @@ Create a file at `/etc/systemd/system/wakaqworker.service` with the above conten
 
 
 
+[wakatime]: https://wakatime.com
 [broadcast]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/task.py#L47
 [soft timeout]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/exceptions.py#L8
 [hard timeout]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/worker.py#L400
