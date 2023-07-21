@@ -28,16 +28,24 @@ from datetime import timedelta
 from wakaq import WakaQ, Queue, CronTask
 
 
+# use constants to prevent misspelling queue names
+Q_HIGH = 'a-high-priority-queue'
+Q_MED = 'a-medium-priority-queue'
+Q_LOW = 'a-low-priority-queue'
+Q_OTHER = 'another-queue'
+Q_DEFAULT = 'default-lowest-priority-queue'
+
+
 wakaq = WakaQ(
 
     # List your queues and their priorities.
     # Queues can be defined as Queue instances, tuples, or just a str.
     queues=[
-        (0, 'a-high-priority-queue'),
-        (1, 'a-medium-priority-queue'),
-        (2, 'a-low-priority-queue'),
-        'default-lowest-priority-queue',
-        Queue('another-queue', priority=3, max_retries=5, soft_timeout=300, hard_timeout=360),
+        (0, Q_HIGH),
+        (1, Q_MED),
+        (2, Q_LOW),
+        Queue(Q_OTHER, priority=3, max_retries=5, soft_timeout=300, hard_timeout=360),
+        Q_DEFAULT,
     ],
 
     # Number of worker processes. Must be an int or str which evaluates to an
@@ -70,7 +78,7 @@ wakaq = WakaQ(
     schedules=[
 
         # Runs mytask on the queue with priority 1.
-        CronTask('* * * * *', 'mytask', queue='a-medium-priority-queue', args=[2, 2], kwargs={}),
+        CronTask('* * * * *', 'mytask', queue=Q_MED, args=[2, 2], kwargs={}),
 
         # Runs mytask once every 5 minutes.
         ('*/5 * * * *', 'mytask', [1, 1], {}),
@@ -81,7 +89,7 @@ wakaq = WakaQ(
 )
 
 
-@wakaq.task(queue='a-medium-priority-queue', max_retries=7, soft_timeout=420, hard_timeout=480)
+@wakaq.task(queue=Q_MED, max_retries=7, soft_timeout=420, hard_timeout=480)
 def mytask(x, y):
     print(x + y)
 
@@ -106,7 +114,7 @@ if __name__ == '__main__':
     mytask.delay(1, 1)
 
     # add 1 plus 1 on a worker somewhere, overwriting the task's queue from medium to high
-    mytask.delay(1, 1, queue='a-high-priority-queue')
+    mytask.delay(1, 1, queue=Q_HIGH)
 
     # print hello world on a worker somewhere, running on the default lowest priority queue
     anothertask.delay()
