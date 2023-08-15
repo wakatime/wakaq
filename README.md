@@ -89,6 +89,7 @@ wakaq = WakaQ(
 )
 
 
+# timeouts can be customized per task with a timedelta or integer seconds
 @wakaq.task(queue=Q_MED, max_retries=7, soft_timeout=420, hard_timeout=480)
 def mytask(x, y):
     print(x + y)
