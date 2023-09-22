@@ -1,5 +1,16 @@
 # CHANGES
 
+## 2.1.0 (2023-09-22) [commits](https://github.com/wakatime/wakaq/compare/2.0.2...2.1.0)
+
+#### Feature
+
+- Include number of workers connected when inspecting queues.
+- Log queue params on startup.
+
+#### Misc
+
+- Improve docs in readme.
+
 ## 2.0.2 (2022-12-09) [commits](https://github.com/wakatime/wakaq/compare/2.0.1...2.0.2)
 
 #### Bugfix
