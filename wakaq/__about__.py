@@ -1,5 +1,5 @@
 __title__ = "WakaQ"
-__description__ = "Distributed task queue for Python backed by Redis, a minimal Celery."
+__description__ = "Background task queue for Python backed by Redis, a minimal Celery."
 __url__ = "https://github.com/wakatime/wakaq"
 __version_info__ = ("2", "0", "2")
 __version__ = ".".join(__version_info__)
