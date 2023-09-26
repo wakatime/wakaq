@@ -171,9 +171,8 @@ class Worker:
                 self._check_child_runtimes()
                 self._listen_for_broadcast_task()
 
-            if self._stop_processing:
-                if len(self.children) > 0:
-                    log.info("shutting down...")
+            if len(self.children) > 0:
+                log.info("shutting down...")
                 while len(self.children) > 0:
                     self._cleanup_children()
                     self._check_child_runtimes()
