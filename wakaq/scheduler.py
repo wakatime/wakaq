@@ -103,11 +103,11 @@ class Scheduler:
             sleep_until = base + timedelta(days=1)
 
             for dt, cron_task in crons:
-                if dt < sleep_until:
+                if self._is_same_minute_precision(dt, sleep_until):
+                    upcoming_tasks.append(cron_task)
+                elif dt < sleep_until:
                     sleep_until = dt
                     upcoming_tasks = [cron_task]
-                elif self._is_same_minute_precision(dt, sleep_until):
-                    upcoming_tasks.append(cron_task)
 
             # sleep until the next scheduled task
             time.sleep((sleep_until - base).total_seconds())
