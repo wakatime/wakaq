@@ -4,14 +4,13 @@
 import calendar
 import logging
 import multiprocessing
-import time
 from datetime import datetime, timedelta
 
 import redis
 
 from .queue import Queue
 from .scheduler import CronTask
-from .serializer import deserialize, serialize
+from .serializer import serialize
 from .task import Task
 from .utils import safe_eval
 
@@ -216,15 +215,6 @@ class WakaQ:
             }
         )
         return self.broker.publish(self.broadcast_key, payload)
-
-    def _blocking_dequeue(self):
-        if len(self.broker_keys) == 0:
-            time.sleep(self.wait_timeout)
-            return None, None
-        data = self.broker.blpop(self.broker_keys, self.wait_timeout)
-        if data is None:
-            return None, None
-        return data[0], deserialize(data[1])
 
     def _queue_or_default(self, queue_name: str):
         if queue_name:

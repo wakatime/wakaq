@@ -227,7 +227,7 @@ class Worker:
             self._num_tasks_processed = 0
             while not self._stop_processing:
                 self._send_ping_to_parent()
-                queue_broker_key, payload = self.wakaq._blocking_dequeue()
+                queue_broker_key, payload = self._blocking_dequeue()
                 if payload is not None:
                     try:
                         task = self.wakaq.tasks[payload["name"]]
@@ -505,6 +505,15 @@ class Worker:
                 log.debug(f"run broadcast task: {payload}")
                 write_fd(child.broadcastout, f"{payload}\n")
                 break
+
+    def _blocking_dequeue(self):
+        if len(self.wakaq.broker_keys) == 0:
+            time.sleep(self.wakaq.wait_timeout)
+            return None, None
+        data = self.wakaq.broker.blpop(self.wakaq.broker_keys, self.wakaq.wait_timeout)
+        if data is None:
+            return None, None
+        return data[0], deserialize(data[1])
 
     def _refork_missing_children(self):
         if self._stop_processing:
