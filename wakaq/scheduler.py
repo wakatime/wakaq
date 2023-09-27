@@ -87,17 +87,16 @@ class Scheduler:
         upcoming_tasks = []
 
         while True:
-            if len(upcoming_tasks) > 0:
-                for cron_task in upcoming_tasks:
-                    task = self.wakaq.tasks[cron_task.task_name]
-                    if cron_task.queue:
-                        queue = self.wakaq.queues_by_name[cron_task.queue]
-                    elif task.queue:
-                        queue = task.queue
-                    else:
-                        queue = self.wakaq.queues[-1]
-                    log.debug(f"run scheduled task on queue {queue.name}: {task.name}")
-                    self.wakaq.broker.lpush(queue.broker_key, cron_task.payload)
+            for cron_task in upcoming_tasks:
+                task = self.wakaq.tasks[cron_task.task_name]
+                if cron_task.queue:
+                    queue = self.wakaq.queues_by_name[cron_task.queue]
+                elif task.queue:
+                    queue = task.queue
+                else:
+                    queue = self.wakaq.queues[-1]
+                log.debug(f"run scheduled task on queue {queue.name}: {task.name}")
+                self.wakaq.broker.lpush(queue.broker_key, cron_task.payload)
 
             upcoming_tasks = []
             crons = [(croniter(x.schedule, base).get_next(datetime), x) for x in self.schedules]
