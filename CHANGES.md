@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.2 (2023-10-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.1...2.1.2)
+
+#### Misc
+
+- Log mem usage and current task when max_mem_percent threshold reached.
+
 ## 2.1.1 (2023-10-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.0...2.1.1)
 
 #### Bugfix
