@@ -2,7 +2,6 @@
 
 
 import logging
-import math
 import os
 import random
 import signal
@@ -341,6 +340,7 @@ class Worker:
         self.children = [c for c in self.children if c.pid != child.pid]
 
     def _on_exit_parent(self, signum, frame):
+        log.info(f"Received signal {signum}")
         self._stop()
 
     def _on_exit_child(self, signum, frame):
@@ -453,13 +453,17 @@ class Worker:
             return
         if len(self.children) == 0:
             return
-        percent_used = int(math.ceil(psutil.virtual_memory().percent))
+        percent_used = int(round(psutil.virtual_memory().percent))
         if percent_used < self.wakaq.max_mem_percent:
             return
         self._max_mem_reached_at = time.time()
         child = self._child_using_most_mem()
-        child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
-        kill(child.pid, signal.SIGQUIT)
+        if child:
+            log.info(
+                f"Mem usage {percent_used}% over max_mem_percent threshold ({self.wakaq.max_mem_percent}%)... stopping child process {child.pid}"
+            )
+            child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
+            kill(child.pid, signal.SIGQUIT)
 
     def _child_using_most_mem(self):
         try:
