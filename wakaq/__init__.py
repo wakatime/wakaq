@@ -99,7 +99,7 @@ class WakaQ:
                 f"Hard timeout ({self.hard_timeout}) can not be less than or equal to soft timeout ({self.soft_timeout})."
             )
 
-        if self.max_mem_percent:
+        if max_mem_percent:
             self.max_mem_percent = int(max_mem_percent)
             if self.max_mem_percent < 1 or self.max_mem_percent > 99:
                 raise Exception(f"Max memory percent must be between 1 and 99: {self.max_mem_percent}")
