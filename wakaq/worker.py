@@ -340,7 +340,7 @@ class Worker:
         self.children = [c for c in self.children if c.pid != child.pid]
 
     def _on_exit_parent(self, signum, frame):
-        log.info(f"Received signal {signum}")
+        log.debug(f"Received signal {signum}")
         self._stop()
 
     def _on_exit_child(self, signum, frame):
@@ -460,7 +460,7 @@ class Worker:
         child = self._child_using_most_mem()
         if child:
             log.info(
-                f"Mem usage {percent_used}% over max_mem_percent threshold ({self.wakaq.max_mem_percent}%)... stopping child process {child.pid}"
+                f"Mem usage {percent_used}% is more than max_mem_percent threshold ({self.wakaq.max_mem_percent}%)... stopping child process {child.pid}"
             )
             child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
             kill(child.pid, signal.SIGQUIT)
