@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.1 (2023-10-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.0...2.1.1)
+
+#### Bugfix
+
+- Fix setting max_mem_percent on WakaQ.
+
 ## 2.1.0 (2023-09-22) [commits](https://github.com/wakatime/wakaq/compare/2.0.2...2.1.0)
 
 #### Feature
