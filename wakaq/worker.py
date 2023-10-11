@@ -357,6 +357,8 @@ class Worker:
 
     def _on_child_exited(self, signum, frame):
         for child in self.children:
+            if child.done:
+                continue
             try:
                 pid, _ = os.waitpid(child.pid, os.WNOHANG)
                 if pid != 0:  # child exited
@@ -365,6 +367,9 @@ class Worker:
                 child.done = True
             except ChildProcessError:  # child pid no longer valid
                 child.done = True
+            if child.done and child.max_mem_reached_at:
+                after = round(time.time() - child.max_mem_reached_at, 2)
+                log.info(f"Stopped {child.pid} after {after} seconds")
 
     def _enqueue_ready_eta_tasks(self):
         script = self.wakaq.broker.register_script(ZRANGEPOP)
