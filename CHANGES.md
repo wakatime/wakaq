@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.5 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.4...2.1.5)
+
+#### Bugfix
+
+- Prevent reset max_mem_reached_at when unrelated child process exits.
+
 ## 2.1.4 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.3...2.1.4)
 
 #### Misc
