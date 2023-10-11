@@ -356,6 +356,7 @@ class Worker:
         raise SoftTimeout("SoftTimeout")
 
     def _on_child_exited(self, signum, frame):
+        self._max_mem_reached_at = 0
         for child in self.children:
             try:
                 pid, _ = os.waitpid(child.pid, os.WNOHANG)
