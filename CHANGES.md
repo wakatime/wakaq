@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.3 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.2...2.1.3)
+
+#### Bugfix
+
+- Wait for child worker to finish processing current task when max_mem_percent reached.
+
 ## 2.1.2 (2023-10-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.1...2.1.2)
 
 #### Misc
