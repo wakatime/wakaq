@@ -1,5 +1,12 @@
 # CHANGES
 
+## 2.1.4 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.3...2.1.4)
+
+#### Misc
+
+- Less noisy logs when max_mem_percent reached.
+- Allow restarting child worker processes more than once per soft timeout.
+
 ## 2.1.3 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.2...2.1.3)
 
 #### Bugfix
