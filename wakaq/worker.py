@@ -470,7 +470,7 @@ class Worker:
         if child:
             log.info(f"Stopping child process {child.pid}...")
             child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
-            kill(child.pid, signal.SIGQUIT)
+            kill(child.pid, signal.SIGTERM)
 
     def _log_mem_usage_of_all_children(self):
         for child in self.children:
