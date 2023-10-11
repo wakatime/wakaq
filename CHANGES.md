@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.6 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.5...2.1.6)
+
+#### Misc
+
+- Log time task took until exited when killed because max_mem_percent reached.
+
 ## 2.1.5 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.4...2.1.5)
 
 #### Bugfix
