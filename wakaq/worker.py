@@ -469,17 +469,22 @@ class Worker:
         self._max_mem_reached_at = now
         child = self._child_using_most_mem()
         if child:
-            log.info(f"Stopping child process {child.pid}...")
+            task = ""
+            if child.current_task:
+                task = f" while processing task {child.current_task.name}"
+            log.info(f"Stopping child process {child.pid}{task}...")
             child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
             kill(child.pid, signal.SIGTERM)
 
     def _log_mem_usage_of_all_children(self):
+        if self.wakaq.worker_log_level != logging.DEBUG:
+            return
         for child in self.children:
             task = ""
             if child.current_task:
                 task = f" while processing task {child.current_task.name}"
             try:
-                log.info(f"Child process {child.pid} using {round(child.mem_usage_percent, 2)}% ram{task}")
+                log.debug(f"Child process {child.pid} using {round(child.mem_usage_percent, 2)}% ram{task}")
             except:
                 log.warning(f"Unable to get ram usage of child process {child.pid}{task}")
                 log.warning(traceback.format_exc())
