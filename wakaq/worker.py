@@ -43,6 +43,7 @@ class Child:
         "broadcastout",
         "last_ping",
         "soft_timeout_reached",
+        "max_mem_reached_at",
         "done",
         "soft_timeout",
         "hard_timeout",
@@ -62,6 +63,7 @@ class Child:
         self.done = False
         self.soft_timeout = None
         self.hard_timeout = None
+        self.max_mem_reached_at = 0
 
     def close(self):
         close_fd(self.pingin)
@@ -91,7 +93,6 @@ class Worker:
         "wakaq",
         "children",
         "_stop_processing",
-        "_max_mem_reached_at",
         "_pubsub",
         "_pingout",
         "_broadcastin",
@@ -127,7 +128,6 @@ class Worker:
     def _run(self):
         self.children = []
         self._stop_processing = False
-        self._max_mem_reached_at = 0
 
         pid = None
         for i in range(self.wakaq.concurrency):
@@ -356,7 +356,6 @@ class Worker:
         raise SoftTimeout("SoftTimeout")
 
     def _on_child_exited(self, signum, frame):
-        self._max_mem_reached_at = 0
         for child in self.children:
             try:
                 pid, _ = os.waitpid(child.pid, os.WNOHANG)
@@ -455,9 +454,10 @@ class Worker:
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
             return
+        max_mem_reached_at = max([c.max_mem_reached_at for c in self.children if not c.done])
         task_timeout = self.wakaq.hard_timeout or self.wakaq.soft_timeout or 120
         now = time.time()
-        if now - self._max_mem_reached_at < task_timeout:
+        if now - max_mem_reached_at < task_timeout:
             return
         if len(self.children) == 0:
             return
@@ -466,7 +466,6 @@ class Worker:
             return
         log.info(f"Mem usage {percent_used}% is more than max_mem_percent threshold ({self.wakaq.max_mem_percent}%)")
         self._log_mem_usage_of_all_children()
-        self._max_mem_reached_at = now
         child = self._child_using_most_mem()
         if child:
             task = ""
@@ -474,6 +473,7 @@ class Worker:
                 task = f" while processing task {child.current_task.name}"
             log.info(f"Stopping child process {child.pid}{task}...")
             child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
+            child.max_mem_reached_at = now
             kill(child.pid, signal.SIGTERM)
 
     def _log_mem_usage_of_all_children(self):
