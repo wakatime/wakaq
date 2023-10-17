@@ -1,4 +1,7 @@
 # ![logo](https://raw.githubusercontent.com/wakatime/wakaq/main/wakatime-logo.png "WakaQ") WakaQ
+
+[![wakatime](https://wakatime.com/badge/github/wakatime/wakaq.svg)](https://wakatime.com/badge/github/wakatime/wakaq)
+
 Background task queue for Python backed by Redis, a super minimal Celery.
 Read about the motivation behind this project on [this blog post][blog launch] and the accompanying [Hacker News discussion][hacker news].
 WakaQ is currently used in production at [WakaTime.com][wakatime].
