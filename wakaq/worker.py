@@ -513,10 +513,10 @@ class Worker:
                 if ping != "":
                     try:
                         task_name, queue_name = ping.split(":", 1)
+                        task = self.wakaq.tasks[task_name]
+                        queue = self.wakaq.queues_by_name.get(queue_name)
                     except ValueError:
                         log.error(f"Unable to unpack message from child process {child.pid}: {ping}")
-                    task = self.wakaq.tasks[task_name]
-                    queue = self.wakaq.queues_by_name.get(queue_name)
                 child.set_timeouts(self.wakaq, task=task, queue=queue)
             else:
                 soft_timeout = child.soft_timeout or self.wakaq.soft_timeout
