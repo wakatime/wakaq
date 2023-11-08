@@ -72,6 +72,8 @@ class WakaQ:
         wait_timeout=1,
     ):
         self.queues = [Queue.create(x) for x in queues]
+        if len(self.queues) == 0:
+            raise Exception("Missing queues.")
         lowest_priority = max(self.queues, key=lambda q: q.priority)
         self.queues = list(map(lambda q: self._default_priority(q, lowest_priority.priority), self.queues))
         self.queues.sort(key=lambda q: q.priority)

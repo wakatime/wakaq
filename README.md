@@ -78,7 +78,8 @@ wakaq = WakaQ(
     max_tasks_per_worker=5000,
 
     # Schedule two tasks, the first runs every minute, the second once every ten minutes.
-    # Scheduled tasks can be passed as CronTask instances or tuples.
+    # Scheduled tasks can be passed as CronTask instances or tuples. To run scheduled
+    # tasks you must keep a wakaq scheduler running as a daemon.
     schedules=[
 
         # Runs mytask on the queue with priority 1.

@@ -459,7 +459,7 @@ class Worker:
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
             return
-        max_mem_reached_at = max([c.max_mem_reached_at for c in self.children if not c.done])
+        max_mem_reached_at = max([c.max_mem_reached_at for c in self.children if not c.done], default=0)
         task_timeout = self.wakaq.hard_timeout or self.wakaq.soft_timeout or 120
         now = time.time()
         if now - max_mem_reached_at < task_timeout:
