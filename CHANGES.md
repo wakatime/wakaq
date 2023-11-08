@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.8 (2023-11-08) [commits](https://github.com/wakatime/wakaq/compare/2.1.7...2.1.8)
+
+#### Bugfix
+
+- Prevent ValueError when unpacking invalid message from child process.
+
 ## 2.1.7 (2023-11-08) [commits](https://github.com/wakatime/wakaq/compare/2.1.6...2.1.7)
 
 #### Bugfix
