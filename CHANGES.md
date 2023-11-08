@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.9 (2023-11-08) [commits](https://github.com/wakatime/wakaq/compare/2.1.8...2.1.9)
+
+#### Bugfix
+
+- Prevent UnboundLocalError from using task_name var before assignment.
+
 ## 2.1.8 (2023-11-08) [commits](https://github.com/wakatime/wakaq/compare/2.1.7...2.1.8)
 
 #### Bugfix
