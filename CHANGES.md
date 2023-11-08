@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.7 (2023-11-08) [commits](https://github.com/wakatime/wakaq/compare/2.1.6...2.1.7)
+
+#### Bugfix
+
+- Prevent ValueError if no worker processes spawned when checking max mem usage.
+
 ## 2.1.6 (2023-10-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.5...2.1.6)
 
 #### Misc
