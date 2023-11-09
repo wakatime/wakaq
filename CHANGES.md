@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.12 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.11...2.1.12)
+
+#### Bugfix
+
+- Only refork crashed workers once per wait_timeout.
+
 ## 2.1.11 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.10...2.1.11)
 
 #### Bugfix
