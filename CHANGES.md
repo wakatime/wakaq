@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.14 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.13...2.1.14)
+
+#### Bugfix
+
+- Add missing wrapped log.handlers property.
+
 ## 2.1.13 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.12...2.1.13)
 
 #### Misc
