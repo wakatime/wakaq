@@ -20,6 +20,7 @@ from .utils import (
     exception_in_chain,
     flush_fh,
     kill,
+    mem_usage_percent,
     read_fd,
     write_fd,
     write_fd_or_raise,
@@ -182,6 +183,7 @@ class Worker:
                     self._cleanup_children()
                     self._check_child_runtimes()
                     time.sleep(0.05)
+            log.info("all workers stopped")
 
         except:
             try:
@@ -466,7 +468,7 @@ class Worker:
             return
         if len(self.children) == 0:
             return
-        percent_used = int(round(psutil.virtual_memory().percent))
+        percent_used = mem_usage_percent()
         if percent_used < self.wakaq.max_mem_percent:
             return
         log.info(f"Mem usage {percent_used}% is more than max_mem_percent threshold ({self.wakaq.max_mem_percent}%)")
@@ -554,6 +556,13 @@ class Worker:
     def _refork_missing_children(self):
         if self._stop_processing:
             return
+
         for i in range(self.wakaq.concurrency - len(self.children)):
+
+            # postpone fork missing children if using too much ram
+            if self.wakaq.max_mem_percent:
+                if mem_usage_percent() >= self.wakaq.max_mem_percent:
+                    return
+
             log.debug("restarting a crashed worker")
             self._fork()

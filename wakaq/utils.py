@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from importlib import import_module
 from typing import Union
 
+import psutil
+
 from .serializer import deserialize
 
 
@@ -177,6 +179,10 @@ def flush_fh(fh):
         fh.flush()
     except:
         pass
+
+
+def mem_usage_percent():
+    return int(round(psutil.virtual_memory().percent))
 
 
 _operations = {
