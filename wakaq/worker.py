@@ -132,6 +132,16 @@ class Worker:
 
         pid = None
         for i in range(self.wakaq.concurrency):
+
+            # postpone fork if using too much ram
+            if self.wakaq.max_mem_percent:
+                percent_used = mem_usage_percent()
+                if percent_used >= self.wakaq.max_mem_percent:
+                    log.info(
+                        f"postpone forking workers... mem usage {percent_used}% is more than max_mem_percent threshold ({self.wakaq.max_mem_percent}%)"
+                    )
+                    break
+
             pid = self._fork()
             if pid == 0:
                 break
@@ -561,7 +571,11 @@ class Worker:
 
             # postpone fork missing children if using too much ram
             if self.wakaq.max_mem_percent:
-                if mem_usage_percent() >= self.wakaq.max_mem_percent:
+                percent_used = mem_usage_percent()
+                if percent_used >= self.wakaq.max_mem_percent:
+                    log.debug(
+                        f"postpone forking missing workers... mem usage {percent_used}% is more than max_mem_percent threshold ({self.wakaq.max_mem_percent}%)"
+                    )
                     return
 
             log.debug("restarting a crashed worker")
