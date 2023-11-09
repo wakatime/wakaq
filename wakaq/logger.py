@@ -61,6 +61,10 @@ class SafeLogger:
         except:
             pass
 
+    @property
+    def handlers(self):
+        return logger.handlers
+
 
 log = SafeLogger()
 
