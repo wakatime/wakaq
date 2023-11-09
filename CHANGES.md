@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.10 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.9...2.1.10)
+
+#### Bugfix
+
+- Postpone forking missing child workers while using too much RAM.
+
 ## 2.1.9 (2023-11-08) [commits](https://github.com/wakatime/wakaq/compare/2.1.8...2.1.9)
 
 #### Bugfix
