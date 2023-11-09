@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.11 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.10...2.1.11)
+
+#### Bugfix
+
+- Postpone forking workers at startup if until ram usage below max threshold.
+
 ## 2.1.10 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.9...2.1.10)
 
 #### Bugfix
