@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 from datetime import timedelta
 from functools import wraps
 

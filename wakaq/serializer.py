@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 from base64 import b64decode, b64encode
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal

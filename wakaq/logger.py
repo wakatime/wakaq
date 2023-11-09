@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import sys
 from logging import Formatter as FormatterBase
 from logging import StreamHandler, captureWarnings, getLogger

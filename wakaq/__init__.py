@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import calendar
 import logging
 import multiprocessing

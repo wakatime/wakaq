@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 import ast
 import calendar
 import operator
