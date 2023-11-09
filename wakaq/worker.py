@@ -12,7 +12,7 @@ import traceback
 import psutil
 
 from .exceptions import SoftTimeout
-from .logger import setup_logging
+from .logger import log, setup_logging
 from .serializer import deserialize
 from .utils import (
     close_fd,
@@ -31,9 +31,6 @@ local results = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1])
 redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, ARGV[1])
 return results
 """
-
-
-log = logging.getLogger("wakaq")
 
 
 class Child:

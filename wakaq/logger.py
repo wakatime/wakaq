@@ -9,6 +9,64 @@ from logging.handlers import WatchedFileHandler
 from .serializer import serialize
 from .utils import current_task
 
+logger = getLogger("wakaq")
+
+
+class SafeLogger:
+    def setLevel(self, *args, **kwargs):
+        logger.setLevel(*args, **kwargs)
+
+    def debug(self, *args, **kwargs):
+        try:
+            logger.debug(*args, **kwargs)
+        except:
+            pass
+
+    def info(self, *args, **kwargs):
+        try:
+            logger.info(*args, **kwargs)
+        except:
+            pass
+
+    def warning(self, *args, **kwargs):
+        try:
+            logger.warning(*args, **kwargs)
+        except:
+            pass
+
+    def error(self, *args, **kwargs):
+        try:
+            logger.error(*args, **kwargs)
+        except:
+            pass
+
+    def exception(self, *args, **kwargs):
+        try:
+            logger.exception(*args, **kwargs)
+        except:
+            pass
+
+    def critical(self, *args, **kwargs):
+        try:
+            logger.critical(*args, **kwargs)
+        except:
+            pass
+
+    def fatal(self, *args, **kwargs):
+        try:
+            logger.fatal(*args, **kwargs)
+        except:
+            pass
+
+    def log(self, *args, **kwargs):
+        try:
+            logger.log(*args, **kwargs)
+        except:
+            pass
+
+
+log = SafeLogger()
+
 
 class Formatter(FormatterBase):
     def __init__(self, wakaq):

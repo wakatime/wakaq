@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
-import logging
 import time
 from datetime import datetime, timedelta
 
 from croniter import croniter
 
-from .logger import setup_logging
+from .logger import log, setup_logging
 from .serializer import serialize
-
-log = logging.getLogger("wakaq")
 
 
 class CronTask:
