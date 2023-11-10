@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.15 (2023-11-10) [commits](https://github.com/wakatime/wakaq/compare/2.1.14...2.1.15)
+
+#### Bugfix
+
+- Unsubscribe from pubsub while worker processes are waiting to exit.
+
 ## 2.1.14 (2023-11-09) [commits](https://github.com/wakatime/wakaq/compare/2.1.13...2.1.14)
 
 #### Bugfix
