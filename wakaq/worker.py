@@ -236,7 +236,7 @@ class Worker:
 
             log.debug("started worker process")
 
-            if self.wakaq.after_worker_started_callback:
+            if callable(self.wakaq.after_worker_started_callback):
                 self.wakaq.after_worker_started_callback()
 
             self._num_tasks_processed = 0
@@ -395,17 +395,17 @@ class Worker:
     def _execute_task(self, task, payload, queue=None):
         self._send_ping_to_parent(task_name=task.name, queue_name=queue.name if queue else None)
         log.debug(f"running with payload {payload}")
-        if self.wakaq.before_task_started_callback:
+        if callable(self.wakaq.before_task_started_callback):
             self.wakaq.before_task_started_callback()
         try:
-            if self.wakaq.wrap_tasks_function:
+            if callable(self.wakaq.wrap_tasks_function):
                 self.wakaq.wrap_tasks_function(task.fn)(*payload["args"], **payload["kwargs"])
             else:
                 task.fn(*payload["args"], **payload["kwargs"])
         finally:
             self._send_ping_to_parent()
             self._num_tasks_processed += 1
-            if self.wakaq.after_task_finished_callback:
+            if callable(self.wakaq.after_task_finished_callback):
                 self.wakaq.after_task_finished_callback()
 
     def _execute_broadcast_tasks(self):
