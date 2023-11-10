@@ -91,7 +91,6 @@ class Worker:
         "_pubsub",
         "_pingout",
         "_broadcastin",
-        "_stdout",
         "_num_tasks_processed",
     ]
 
@@ -201,16 +200,14 @@ class Worker:
             self._stop()
 
     def _child(self, stdout, pingout, broadcastin):
+        os.dup2(stdout, sys.stdout.fileno())
+        os.dup2(stdout, sys.stderr.fileno())
+        close_fd(stdout)
         os.set_blocking(pingout, False)
         os.set_blocking(broadcastin, False)
-        os.set_blocking(stdout, False)
+        os.set_blocking(sys.stdout, False)
         self._pingout = pingout
         self._broadcastin = broadcastin
-        self._stdout = stdout
-
-        fh = os.fdopen(stdout, "w")
-        sys.stdout = fh
-        sys.stderr = fh
 
         # reset sigchld
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
@@ -326,11 +323,8 @@ class Worker:
             log.error(traceback.format_exc())
 
         finally:
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
-            flush_fh(fh)
+            flush_fh(sys.stdout)
             close_fd(self._broadcastin)
-            close_fd(self._stdout)
             close_fd(self._pingout)
 
     def _send_ping_to_parent(self, task_name=None, queue_name=None):
