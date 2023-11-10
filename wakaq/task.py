@@ -1,5 +1,4 @@
 from datetime import timedelta
-from functools import wraps
 
 from .queue import Queue
 
@@ -16,6 +15,7 @@ class Task:
     ]
 
     def __init__(self, fn=None, wakaq=None, queue=None, soft_timeout=None, hard_timeout=None, max_retries=None):
+        self.fn = fn
         self.name = fn.__name__
         self.wakaq = wakaq
         if queue:
@@ -33,14 +33,8 @@ class Task:
 
         self.max_retries = int(max_retries) if max_retries else None
 
-        @wraps(fn)
-        def inner(*args, **kwargs):
-            return fn(*args, **kwargs)
-
-        inner.delay = self._delay
-        inner.broadcast = self._broadcast
-
-        self.fn = inner
+        self.fn.delay = self._delay
+        self.fn.broadcast = self._broadcast
 
     def _delay(self, *args, **kwargs):
         """Run task in the background."""
