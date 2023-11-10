@@ -144,28 +144,32 @@ class WakaQ:
 
     def after_worker_started(self, fn=None):
         def wrap(f):
-            self.after_worker_started_callback = f
+            if not callable(self.wakaq.after_worker_started_callback):
+                self.after_worker_started_callback = f
             return f
 
         return wrap(fn) if fn else wrap
 
     def before_task_started(self, fn=None):
         def wrap(f):
-            self.before_task_started_callback = f
+            if not callable(self.wakaq.before_task_started_callback):
+                self.before_task_started_callback = f
             return f
 
         return wrap(fn) if fn else wrap
 
     def after_task_finished(self, fn=None):
         def wrap(f):
-            self.after_task_finished_callback = f
+            if not callable(self.wakaq.after_task_finished_callback):
+                self.after_task_finished_callback = f
             return f
 
         return wrap(fn) if fn else wrap
 
     def wrap_tasks_with(self, fn=None):
         def wrap(f):
-            self.wrap_tasks_function = f
+            if not callable(self.wakaq.wrap_tasks_function):
+                self.wrap_tasks_function = f
             return f
 
         return wrap(fn) if fn else wrap
