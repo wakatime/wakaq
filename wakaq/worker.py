@@ -205,7 +205,8 @@ class Worker:
         close_fd(stdout)
         os.set_blocking(pingout, False)
         os.set_blocking(broadcastin, False)
-        os.set_blocking(sys.stdout, False)
+        os.set_blocking(sys.stdout.fileno(), False)
+        os.set_blocking(sys.stderr.fileno(), False)
         self._pingout = pingout
         self._broadcastin = broadcastin
 
@@ -300,11 +301,13 @@ class Worker:
                 else:
                     self._send_ping_to_parent()
                 flush_fh(sys.stdout)
+                flush_fh(sys.stderr)
                 self._execute_broadcast_tasks()
                 if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
                     log.info(f"restarting worker after {self._num_tasks_processed} tasks")
                     self._stop_processing = True
                 flush_fh(sys.stdout)
+                flush_fh(sys.stderr)
 
         # re-raise the timeout if we were processing a task, otherwise just exit and let
         # parent re-fork another child
@@ -324,8 +327,11 @@ class Worker:
 
         finally:
             flush_fh(sys.stdout)
+            flush_fh(sys.stderr)
             close_fd(self._broadcastin)
             close_fd(self._pingout)
+            close_fd(sys.stdout)
+            close_fd(sys.stderr)
 
     def _send_ping_to_parent(self, task_name=None, queue_name=None):
         msg = task_name or ""
