@@ -119,6 +119,10 @@ class Worker:
         self._stop_processing = True
         for child in self.children:
             kill(child.pid, signal.SIGTERM)
+        try:
+            self._pubsub.unsubscribe()
+        except:
+            log.debug(traceback.format_exc())
 
     def _run(self):
         self.children = []
