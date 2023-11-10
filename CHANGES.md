@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.17 (2023-11-10) [commits](https://github.com/wakatime/wakaq/compare/2.1.16...2.1.17)
+
+#### Bugfix
+
+- Fix typo.
+
 ## 2.1.16 (2023-11-10) [commits](https://github.com/wakatime/wakaq/compare/2.1.15...2.1.16)
 
 #### Bugfix
