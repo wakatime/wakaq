@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.16 (2023-11-10) [commits](https://github.com/wakatime/wakaq/compare/2.1.15...2.1.16)
+
+#### Bugfix
+
+- Fix function decorator callbacks after_worker_started, etc.
+
 ## 2.1.15 (2023-11-10) [commits](https://github.com/wakatime/wakaq/compare/2.1.14...2.1.15)
 
 #### Bugfix
