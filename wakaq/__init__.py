@@ -142,21 +142,33 @@ class WakaQ:
 
         return wrap(fn) if fn else wrap
 
-    def after_worker_started(self, callback):
-        self.after_worker_started_callback = callback
-        return callback
+    def after_worker_started(self, fn=None):
+        def wrap(f):
+            self.after_worker_started_callback = f
+            return f
 
-    def before_task_started(self, callback):
-        self.before_task_started_callback = callback
-        return callback
+        return wrap(fn) if fn else wrap
 
-    def after_task_finished(self, callback):
-        self.after_task_finished_callback = callback
-        return callback
+    def before_task_started(self, fn=None):
+        def wrap(f):
+            self.before_task_started_callback = f
+            return f
 
-    def wrap_tasks_with(self, callback):
-        self.wrap_tasks_function = callback
-        return callback
+        return wrap(fn) if fn else wrap
+
+    def after_task_finished(self, fn=None):
+        def wrap(f):
+            self.after_task_finished_callback = f
+            return f
+
+        return wrap(fn) if fn else wrap
+
+    def wrap_tasks_with(self, fn=None):
+        def wrap(f):
+            self.wrap_tasks_function = f
+            return f
+
+        return wrap(fn) if fn else wrap
 
     def _validate_queue_names(self, queue_names: list) -> list:
         try:
