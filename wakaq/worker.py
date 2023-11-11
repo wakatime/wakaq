@@ -10,7 +10,7 @@ import psutil
 
 from .exceptions import SoftTimeout
 from .logger import log, setup_logging
-from .serializer import deserialize
+from .serializer import deserialize, serialize
 from .utils import (
     close_fd,
     current_task,
@@ -249,6 +249,15 @@ class Worker:
                         task = None
 
                     if task is not None:
+
+                        # make sure parent process is still around (OOM killer may have stopped it without sending child signal)
+                        try:
+                            self._send_ping_to_parent()
+                        except:
+                            # give task back to queue so it's not lost
+                            self.wakaq.broker.lpush(queue_broker_key, serialize(payload))
+                            raise
+
                         queue = self.wakaq.queues_by_key[queue_broker_key]
                         current_task.set((task, payload))
                         retry = payload.get("retry") or 0
