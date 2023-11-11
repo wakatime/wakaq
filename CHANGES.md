@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.18 (2023-11-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.17...2.1.18)
+
+#### Bugfix
+
+- Prevent lost tasks when OOM kills parent worker process.
+
 ## 2.1.17 (2023-11-10) [commits](https://github.com/wakatime/wakaq/compare/2.1.16...2.1.17)
 
 #### Bugfix
