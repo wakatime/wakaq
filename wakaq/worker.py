@@ -259,7 +259,8 @@ class Worker:
                         except:
                             # give task back to queue so it's not lost
                             self.wakaq.broker.lpush(queue_broker_key, serialize(payload))
-                            raise
+                            self._stop_processing = True
+                            return
 
                         try:
                             self._execute_task(task, payload, queue=queue)
