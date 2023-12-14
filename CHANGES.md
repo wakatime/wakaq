@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.20 (2023-12-14) [commits](https://github.com/wakatime/wakaq/compare/2.1.19...2.1.20)
+
+#### Bugfix
+
+- Silently exit child worker(s) when parent process missing.
+
 ## 2.1.19 (2023-11-11) [commits](https://github.com/wakatime/wakaq/compare/2.1.18...2.1.19)
 
 #### Bugfix
