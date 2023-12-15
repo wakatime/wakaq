@@ -49,6 +49,7 @@ class Child:
         os.set_blocking(stdin, False)
         os.set_blocking(pingin, False)
         os.set_blocking(broadcastout, False)
+        self.current_task = None
         self.pid = pid
         self.stdin = stdin
         self.pingin = pingin
@@ -259,8 +260,8 @@ class Worker:
                         except:
                             # give task back to queue so it's not lost
                             self.wakaq.broker.lpush(queue_broker_key, serialize(payload))
-                            self._stop_processing = True
-                            return
+                            current_task.set(None)
+                            raise
 
                         try:
                             self._execute_task(task, payload, queue=queue)
@@ -323,6 +324,11 @@ class Worker:
         except SoftTimeout:
             if current_task.get():
                 raise
+
+        except (MemoryError, BlockingIOError):
+            if current_task.get():
+                raise
+            log.debug(traceback.format_exc())
 
         except Exception as e:
             if exception_in_chain(e, SoftTimeout):
