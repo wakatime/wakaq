@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.21 (2023-12-15) [commits](https://github.com/wakatime/wakaq/compare/2.1.20...2.1.21)
+
+#### Bugfix
+
+- Log memory errors when to debug level.
+
 ## 2.1.20 (2023-12-14) [commits](https://github.com/wakatime/wakaq/compare/2.1.19...2.1.20)
 
 #### Bugfix
