@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.22 (2023-12-16) [commits](https://github.com/wakatime/wakaq/compare/2.1.21...2.1.22)
+
+#### Bugfix
+
+- Fix logging memory errors and treat BrokenPipeError as mem error.
+
 ## 2.1.21 (2023-12-15) [commits](https://github.com/wakatime/wakaq/compare/2.1.20...2.1.21)
 
 #### Bugfix
