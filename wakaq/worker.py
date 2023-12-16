@@ -265,21 +265,11 @@ class Worker:
 
                         try:
                             self._execute_task(task, payload, queue=queue)
+                            current_task.set(None)
+                            self._send_ping_to_parent()
 
-                        except SoftTimeout:
-                            retry += 1
-                            max_retries = task.max_retries
-                            if max_retries is None:
-                                max_retries = (
-                                    queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
-                                )
-                            if retry > max_retries:
-                                log.error(traceback.format_exc())
-                            else:
-                                log.warning(traceback.format_exc())
-                                self.wakaq._enqueue_at_end(
-                                    task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
-                                )
+                        except (MemoryError, BlockingIOError, BrokenPipeError):
+                            raise
 
                         except Exception as e:
                             if exception_in_chain(e, SoftTimeout):
@@ -299,17 +289,10 @@ class Worker:
                             else:
                                 log.error(traceback.format_exc())
 
-                        except:  # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                        # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                        except:
                             log.error(traceback.format_exc())
 
-                        finally:
-                            current_task.set(None)
-
-                    else:
-                        self._send_ping_to_parent()
-
-                else:
-                    self._send_ping_to_parent()
                 flush_fh(sys.stdout)
                 flush_fh(sys.stderr)
                 self._execute_broadcast_tasks()
@@ -319,13 +302,7 @@ class Worker:
                 flush_fh(sys.stdout)
                 flush_fh(sys.stderr)
 
-        # re-raise the timeout if we were processing a task, otherwise just exit and let
-        # parent re-fork another child
-        except SoftTimeout:
-            if current_task.get():
-                raise
-
-        except (MemoryError, BlockingIOError):
+        except (MemoryError, BlockingIOError, BrokenPipeError):
             if current_task.get():
                 raise
             log.debug(traceback.format_exc())
@@ -417,7 +394,6 @@ class Worker:
             else:
                 task.fn(*payload["args"], **payload["kwargs"])
         finally:
-            self._send_ping_to_parent()
             self._num_tasks_processed += 1
             if callable(self.wakaq.after_task_finished_callback):
                 self.wakaq.after_task_finished_callback()
@@ -442,17 +418,6 @@ class Worker:
                         self._execute_task(task, payload)
                         break
 
-                    except SoftTimeout:
-                        retry += 1
-                        max_retries = task.max_retries
-                        if max_retries is None:
-                            max_retries = self.wakaq.max_retries
-                        if retry > max_retries:
-                            log.error(traceback.format_exc())
-                            break
-                        else:
-                            log.warning(traceback.format_exc())
-
                     except Exception as e:
                         if exception_in_chain(e, SoftTimeout):
                             retry += 1
@@ -474,6 +439,7 @@ class Worker:
 
             finally:
                 current_task.set(None)
+                self._send_ping_to_parent()
 
     def _read_child_logs(self):
         for child in self.children:

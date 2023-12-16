@@ -244,6 +244,8 @@ current_task = Context()
 
 
 def exception_in_chain(e, exception_type):
+    if isinstance(e, exception_type):
+        return True
     while e.__context__ is not None:
         if isinstance(e.__context__, exception_type):
             return True
