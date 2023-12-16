@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.23 (2023-12-16) [commits](https://github.com/wakatime/wakaq/compare/2.1.22...2.1.23)
+
+#### Bugfix
+
+- Fix catching out of memory errors when executing broadcast tasks.
+
 ## 2.1.22 (2023-12-16) [commits](https://github.com/wakatime/wakaq/compare/2.1.21...2.1.22)
 
 #### Bugfix
