@@ -411,35 +411,35 @@ class Worker:
                 continue
             retry = 0
             current_task.set((task, payload))
-            try:
-                while True:
-                    try:
-                        self._send_ping_to_parent(task_name=task.name)
-                        self._execute_task(task, payload)
-                        break
+            while True:
+                try:
+                    self._send_ping_to_parent(task_name=task.name)
+                    self._execute_task(task, payload)
+                    current_task.set(None)
+                    self._send_ping_to_parent()
+                    break
 
-                    except Exception as e:
-                        if exception_in_chain(e, SoftTimeout):
-                            retry += 1
-                            max_retries = task.max_retries
-                            if max_retries is None:
-                                max_retries = self.wakaq.max_retries
-                            if retry > max_retries:
-                                log.error(traceback.format_exc())
-                                break
-                            else:
-                                log.warning(traceback.format_exc())
-                        else:
+                except (MemoryError, BlockingIOError, BrokenPipeError):
+                    raise
+
+                except Exception as e:
+                    if exception_in_chain(e, SoftTimeout):
+                        retry += 1
+                        max_retries = task.max_retries
+                        if max_retries is None:
+                            max_retries = self.wakaq.max_retries
+                        if retry > max_retries:
                             log.error(traceback.format_exc())
                             break
-
-                    except:  # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                        else:
+                            log.warning(traceback.format_exc())
+                    else:
                         log.error(traceback.format_exc())
                         break
 
-            finally:
-                current_task.set(None)
-                self._send_ping_to_parent()
+                except:  # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                    log.error(traceback.format_exc())
+                    break
 
     def _read_child_logs(self):
         for child in self.children:
