@@ -43,7 +43,7 @@ def inspect(app):
     }
 
 
-def pending_tasks_in_queue(app, queue=None, queue_name: str = None, limit: int = None) -> list:
+def pending_tasks_in_queue(app, queue=None, queue_name: str = None, limit: int = 20) -> list:
     if not queue:
         if queue_name is None:
             return []
@@ -63,7 +63,7 @@ def pending_eta_tasks_in_queue(
     queue=None,
     queue_name: str = None,
     before: Union[datetime, timedelta, int] = None,
-    limit: int = None,
+    limit: int = 20,
 ) -> list:
     if not queue:
         if queue_name is None:
