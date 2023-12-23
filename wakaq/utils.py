@@ -13,6 +13,8 @@ from .serializer import deserialize
 
 
 def import_app(app):
+    """ Import and return the WakaQ instance from the specified module path."""
+
     cwd = os.getcwd()
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
@@ -27,6 +29,8 @@ def import_app(app):
 
 
 def inspect(app):
+    """ Return the queues and their respective pending task counts, and the number of workers connected."""
+
     queues = {}
     for queue in app.queues:
         queues[queue.name] = {
@@ -44,6 +48,8 @@ def inspect(app):
 
 
 def pending_tasks_in_queue(app, queue=None, queue_name: str = None, limit: int = 20) -> list:
+    """Retrieve a list of pending tasks from a queue, without removing them from the queue."""
+
     if not queue:
         if queue_name is None:
             return []
@@ -65,6 +71,8 @@ def pending_eta_tasks_in_queue(
     before: Union[datetime, timedelta, int] = None,
     limit: int = 20,
 ) -> list:
+    """Retrieve a list of pending eta tasks from a queue, without removing them from the queue."""
+
     if not queue:
         if queue_name is None:
             return []
@@ -98,6 +106,8 @@ def pending_eta_tasks_in_queue(
 
 
 def num_pending_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
+    """Count and return the number of pending tasks in a queue."""
+
     if not queue:
         if queue_name is None:
             return 0
@@ -108,6 +118,8 @@ def num_pending_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
 
 
 def num_pending_eta_tasks_in_queue(app, queue=None, queue_name: str = None) -> int:
+    """Count and return the number of pending eta tasks in a queue."""
+
     if not queue:
         if queue_name is None:
             return 0
@@ -118,10 +130,14 @@ def num_pending_eta_tasks_in_queue(app, queue=None, queue_name: str = None) -> i
 
 
 def num_workers_connected(app) -> int:
+    """Count and return the number of connected workers."""
+
     return app.broker.pubsub_numsub(app.broadcast_key)[0][1]
 
 
 def purge_queue(app, queue_name: str):
+    """Empty a queue, discarding any pending tasks."""
+
     if queue_name is None:
         return
     queue = app.queues_by_name.get(queue_name)
@@ -131,6 +147,8 @@ def purge_queue(app, queue_name: str):
 
 
 def purge_eta_queue(app, queue_name: str):
+    """Empty a queue of any pending eta tasks."""
+
     if queue_name is None:
         return
     queue = app.queues_by_name.get(queue_name)
