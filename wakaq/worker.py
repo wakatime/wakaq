@@ -445,7 +445,11 @@ class Worker:
         for child in self.children:
             logs = read_fd(child.stdin)
             if logs != "":
-                log.handlers[0].stream.write(logs)
+                if log.handlers[0].stream is None:  # filehandle can disappear if we run out of RAM
+                    print(logs)
+                    self._stop()
+                else:
+                    log.handlers[0].stream.write(logs)
 
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
