@@ -126,7 +126,7 @@ if __name__ == '__main__':
     anothertask.delay()
 
     # print hello world on a worker somewhere, after 10 seconds from now
-    anothertask.delay(eta=timedelta(minutes=10))
+    anothertask.delay(eta=timedelta(seconds=10))
 ```
 
 ## Deploying
