@@ -1,5 +1,11 @@
 # CHANGES
 
+## 2.1.24 (2024-08-19) [commits](https://github.com/wakatime/wakaq/compare/2.1.23...2.1.24)
+
+#### Bugfix
+
+- Fix number of cores not resolving to integer.
+
 ## 2.1.23 (2023-12-16) [commits](https://github.com/wakatime/wakaq/compare/2.1.22...2.1.23)
 
 #### Bugfix
