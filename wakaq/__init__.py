@@ -247,6 +247,9 @@ class WakaQ:
         if not concurrency:
             return 0
         try:
-            return int(safe_eval(str(concurrency), {"cores": multiprocessing.cpu_count()}))
+            if isinstance(concurrency, int):
+                return concurrency
+            else:
+                return int(safe_eval(str(concurrency), {"cores": multiprocessing.cpu_count()}))
         except Exception as e:
             raise Exception(f"Error parsing concurrency: {e}")
