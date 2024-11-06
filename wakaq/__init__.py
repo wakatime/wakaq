@@ -67,6 +67,7 @@ class WakaQ:
         socket_connect_timeout=15,
         health_check_interval=30,
         wait_timeout=1,
+        synchronous_mode=False,
     ):
         self.queues = [Queue.create(x) for x in queues]
         if len(self.queues) == 0:
@@ -84,6 +85,7 @@ class WakaQ:
         self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
         self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
         self.wait_timeout = wait_timeout.total_seconds() if isinstance(wait_timeout, timedelta) else wait_timeout
+        self.synchronous_mode = synchronous_mode
 
         if self.soft_timeout and self.soft_timeout <= wait_timeout:
             raise Exception(
