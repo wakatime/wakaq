@@ -1,5 +1,12 @@
 # CHANGES
 
+## 2.1.25 (2024-11-07) [commits](https://github.com/wakatime/wakaq/compare/2.1.24...2.1.25)
+
+#### Misc
+
+- Synchronous mode for easier debugging.
+[#10](https://github.com/wakatime/wakaq/pull/10)
+
 ## 2.1.24 (2024-08-19) [commits](https://github.com/wakatime/wakaq/compare/2.1.23...2.1.24)
 
 #### Bugfix
