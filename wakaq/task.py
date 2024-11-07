@@ -41,6 +41,10 @@ class Task:
 
         queue = kwargs.pop("queue", None) or self.queue
         eta = kwargs.pop("eta", None)
+
+        if self.wakaq.synchronous_mode:
+            return self.fn(*args, **kwargs)
+
         if eta:
             self.wakaq._enqueue_with_eta(self.name, queue, args, kwargs, eta)
         else:
