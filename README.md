@@ -91,6 +91,9 @@ wakaq = WakaQ(
         # Runs anothertask on the default lowest priority queue.
         ('*/10 * * * *', 'anothertask'),
     ],
+
+    # Run tasks in foreground without workers, only for testing.
+    synchronous_mode=False,
 )
 
 
