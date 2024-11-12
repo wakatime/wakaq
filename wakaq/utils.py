@@ -13,7 +13,7 @@ from .serializer import deserialize
 
 
 def import_app(app):
-    """ Import and return the WakaQ instance from the specified module path."""
+    """Import and return the WakaQ instance from the specified module path."""
 
     cwd = os.getcwd()
     if cwd not in sys.path:
@@ -29,7 +29,7 @@ def import_app(app):
 
 
 def inspect(app):
-    """ Return the queues and their respective pending task counts, and the number of workers connected."""
+    """Return the queues and their respective pending task counts, and the number of workers connected."""
 
     queues = {}
     for queue in app.queues:
@@ -267,5 +267,5 @@ def exception_in_chain(e, exception_type):
     while (e.__cause__ or e.__context__) is not None:
         if isinstance((e.__cause__ or e.__context__), exception_type):
             return True
-        e = (e.__cause__ or e.__context__)
+        e = e.__cause__ or e.__context__
     return False

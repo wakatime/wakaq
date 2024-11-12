@@ -1,3 +1,5 @@
+import asyncio
+import inspect
 import logging
 import os
 import random
@@ -8,7 +10,7 @@ import traceback
 
 import psutil
 
-from .exceptions import SoftTimeout
+from .exceptions import SoftTimeout, WakaQError
 from .logger import log, setup_logging
 from .serializer import deserialize, serialize
 from .utils import (
@@ -93,6 +95,8 @@ class Worker:
         "_pingout",
         "_broadcastin",
         "_num_tasks_processed",
+        "_loop",
+        "_active_async_tasks",
     ]
 
     def __init__(self, wakaq=None):
@@ -101,6 +105,7 @@ class Worker:
     def start(self):
         setup_logging(self.wakaq)
         log.info(f"concurrency={self.wakaq.concurrency}")
+        log.info(f"async_concurrency={self.wakaq.async_concurrency}")
         log.info(f"soft_timeout={self.wakaq.soft_timeout}")
         log.info(f"hard_timeout={self.wakaq.hard_timeout}")
         log.info(f"wait_timeout={self.wakaq.wait_timeout}")
@@ -232,75 +237,17 @@ class Worker:
 
             # cleanup file descriptors opened by parent process
             self._remove_all_children()
+            self._num_tasks_processed = 0
 
             log.debug("started worker process")
 
             if callable(self.wakaq.after_worker_started_callback):
                 self.wakaq.after_worker_started_callback()
 
-            self._num_tasks_processed = 0
-            while not self._stop_processing:
-                self._send_ping_to_parent()
-                queue_broker_key, payload = self._blocking_dequeue()
-                if payload is not None:
-                    try:
-                        task = self.wakaq.tasks[payload["name"]]
-                    except KeyError:
-                        log.error(f'Task not found: {payload["name"]}')
-                        task = None
-
-                    if task is not None:
-                        queue = self.wakaq.queues_by_key[queue_broker_key]
-                        current_task.set((task, payload))
-                        retry = payload.get("retry") or 0
-
-                        # make sure parent process is still around (OOM killer may have stopped it without sending child signal)
-                        try:
-                            self._send_ping_to_parent(task_name=task.name, queue_name=queue.name if queue else None)
-                        except:
-                            # give task back to queue so it's not lost
-                            self.wakaq.broker.lpush(queue_broker_key, serialize(payload))
-                            current_task.set(None)
-                            raise
-
-                        try:
-                            self._execute_task(task, payload, queue=queue)
-                            current_task.set(None)
-                            self._send_ping_to_parent()
-
-                        except (MemoryError, BlockingIOError, BrokenPipeError):
-                            raise
-
-                        except Exception as e:
-                            if exception_in_chain(e, SoftTimeout):
-                                retry += 1
-                                max_retries = task.max_retries
-                                if max_retries is None:
-                                    max_retries = (
-                                        queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
-                                    )
-                                if retry > max_retries:
-                                    log.error(traceback.format_exc())
-                                else:
-                                    log.warning(traceback.format_exc())
-                                    self.wakaq._enqueue_at_end(
-                                        task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
-                                    )
-                            else:
-                                log.error(traceback.format_exc())
-
-                        # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
-                        except:
-                            log.error(traceback.format_exc())
-
-                flush_fh(sys.stdout)
-                flush_fh(sys.stderr)
-                self._execute_broadcast_tasks()
-                if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
-                    log.info(f"restarting worker after {self._num_tasks_processed} tasks")
-                    self._stop_processing = True
-                flush_fh(sys.stdout)
-                flush_fh(sys.stderr)
+            self._active_async_tasks = set()
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+            self._loop.run_until_complete(self._event_loop())
 
         except (MemoryError, BlockingIOError, BrokenPipeError):
             if current_task.get():
@@ -318,12 +265,115 @@ class Worker:
             log.error(traceback.format_exc())
 
         finally:
+            if hasattr(self, "_loop"):
+                pending = asyncio.all_tasks(self._loop)
+                self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                self._loop.close()
+
             flush_fh(sys.stdout)
             flush_fh(sys.stderr)
             close_fd(self._broadcastin)
             close_fd(self._pingout)
             close_fd(sys.stdout)
             close_fd(sys.stderr)
+
+    async def _event_loop(self):
+        while not self._stop_processing and (not self.wakaq.async_concurrency or len(self._active_async_tasks) < self.wakaq.async_concurrency):
+            self._send_ping_to_parent()
+
+            queue_broker_key, payload = await self._blocking_dequeue()
+            if payload is not None:
+                try:
+                    task = self.wakaq.tasks[payload["name"]]
+                except KeyError:
+                    log.error(f'Task not found: {payload["name"]}')
+                    task = None
+
+                if task is not None:
+                    queue = self.wakaq.queues_by_key[queue_broker_key]
+                    current_task.set((task, payload))
+                    retry = payload.get("retry") or 0
+
+                    # make sure parent process is still around (OOM killer may have stopped it without sending child signal)
+                    try:
+                        self._send_ping_to_parent(task_name=task.name, queue_name=queue.name if queue else None)
+                    except:
+                        # give task back to queue so it's not lost
+                        self.wakaq.broker.lpush(queue_broker_key, serialize(payload))
+                        current_task.set(None)
+                        raise
+
+                    try:
+                        async_task = self._loop.create_task(self._execute_task(task, payload, queue=queue))
+                        async_task.add_done_callback(lambda t: self._active_async_tasks.remove(t))
+                        self._active_async_tasks.add(async_task)
+
+                        if self._active_async_tasks:
+                            done, _ = await asyncio.wait(
+                                self._active_async_tasks, timeout=0.01, return_when=asyncio.FIRST_COMPLETED
+                            )
+
+                            for async_task in done:
+                                try:
+                                    await async_task
+                                except (MemoryError, BlockingIOError, BrokenPipeError):
+                                    raise
+                                except Exception as e:
+                                    if exception_in_chain(e, SoftTimeout):
+                                        retry += 1
+                                        max_retries = task.max_retries
+                                        if max_retries is None:
+                                            max_retries = (
+                                                queue.max_retries
+                                                if queue.max_retries is not None
+                                                else self.wakaq.max_retries
+                                            )
+                                        if retry > max_retries:
+                                            log.error(traceback.format_exc())
+                                        else:
+                                            log.warning(traceback.format_exc())
+                                            self.wakaq._enqueue_at_end(
+                                                task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
+                                            )
+                                    else:
+                                        log.error(traceback.format_exc())
+
+                        current_task.set(None)
+                        self._send_ping_to_parent()
+
+                    except (MemoryError, BlockingIOError, BrokenPipeError):
+                        raise
+
+                    except Exception as e:
+                        if exception_in_chain(e, SoftTimeout):
+                            retry += 1
+                            max_retries = task.max_retries
+                            if max_retries is None:
+                                max_retries = (
+                                    queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
+                                )
+                            if retry > max_retries:
+                                log.error(traceback.format_exc())
+                            else:
+                                log.warning(traceback.format_exc())
+                                self.wakaq._enqueue_at_end(
+                                    task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
+                                )
+                        else:
+                            log.error(traceback.format_exc())
+
+                    # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+                    except:
+                        log.error(traceback.format_exc())
+
+            flush_fh(sys.stdout)
+            flush_fh(sys.stderr)
+            await self._execute_broadcast_tasks()
+            if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
+                log.info(f"restarting worker after {self._num_tasks_processed} tasks")
+                self._stop_processing = True
+            flush_fh(sys.stdout)
+            flush_fh(sys.stderr)
 
     def _send_ping_to_parent(self, task_name=None, queue_name=None):
         msg = task_name or ""
@@ -384,21 +434,38 @@ class Worker:
                 kwargs = payload.pop("kwargs")
                 self.wakaq._enqueue_at_front(task_name, queue.name, args, kwargs)
 
-    def _execute_task(self, task, payload, queue=None):
+    async def _execute_task(self, task, payload, queue=None):
         log.debug(f"running with payload {payload}")
         if callable(self.wakaq.before_task_started_callback):
-            self.wakaq.before_task_started_callback()
+            if inspect.iscoroutinefunction(self.wakaq.before_task_started_callback):
+                await self.wakaq.before_task_started_callback()
+            else:
+                self.wakaq.before_task_started_callback()
+
         try:
             if callable(self.wakaq.wrap_tasks_function):
-                self.wakaq.wrap_tasks_function(task.fn)(*payload["args"], **payload["kwargs"])
+                if inspect.iscoroutinefunction(task.fn) and not inspect.iscoroutinefunction(self.wakaq.wrap_tasks_function):
+                    raise WakaQError("Unable to execute sync wrap_tasks_with when task is async. Make your wrap_tasks_with function async.")
+                if inspect.iscoroutinefunction(self.wakaq.wrap_tasks_function):
+                    await self.wakaq.wrap_tasks_function(task.fn, payload["args"], payload["kwargs"])
+                else:
+                    self.wakaq.wrap_tasks_function(task.fn, payload["args"], payload["kwargs"])
+
             else:
-                task.fn(*payload["args"], **payload["kwargs"])
+                if inspect.iscoroutinefunction(task.fn):
+                    await task.fn(*payload["args"], **payload["kwargs"])
+                else:
+                    task.fn(*payload["args"], **payload["kwargs"])
+
         finally:
             self._num_tasks_processed += 1
             if callable(self.wakaq.after_task_finished_callback):
-                self.wakaq.after_task_finished_callback()
+                if inspect.iscoroutinefunction(self.wakaq.after_task_finished_callback):
+                    await self.wakaq.after_task_finished_callback()
+                else:
+                    self.wakaq.after_task_finished_callback()
 
-    def _execute_broadcast_tasks(self):
+    async def _execute_broadcast_tasks(self):
         payloads = read_fd(self._broadcastin)
         if payloads == "":
             return
@@ -414,7 +481,7 @@ class Worker:
             while True:
                 try:
                     self._send_ping_to_parent(task_name=task.name)
-                    self._execute_task(task, payload)
+                    await self._execute_task(task, payload)
                     current_task.set(None)
                     self._send_ping_to_parent()
                     break
@@ -537,9 +604,9 @@ class Worker:
                 write_fd(child.broadcastout, f"{payload}\n")
                 break
 
-    def _blocking_dequeue(self):
+    async def _blocking_dequeue(self):
         if len(self.wakaq.broker_keys) == 0:
-            time.sleep(self.wakaq.wait_timeout)
+            await asyncio.sleep(self.wakaq.wait_timeout)
             return None, None
         data = self.wakaq.broker.blpop(self.wakaq.broker_keys, self.wakaq.wait_timeout)
         if data is None:
