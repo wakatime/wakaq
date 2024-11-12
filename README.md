@@ -96,9 +96,6 @@ wakaq = WakaQ(
         # Runs anothertask on the default lowest priority queue.
         ('*/10 * * * *', 'anothertask'),
     ],
-
-    # Run tasks in foreground without workers, only for testing.
-    synchronous_mode=False,
 )
 
 
@@ -182,6 +179,53 @@ Create a file at `/etc/systemd/system/wakaqworker.service` with the above conten
 
     systemctl daemon-reload && systemctl enable wakaqworker
 
+## Running synchronously in tests or local dev environment
+
+In dev and test environments, it’s easier to run tasks synchronously so you don’t need Redis or any worker processes.
+The recommended way is mocking WakaQ:
+
+```python
+class WakaQMock:
+    def __init__(self):
+        self.task = TaskMock
+
+    def wrap_tasks_with(self, fn):
+        return fn
+
+
+class TaskMock(object):
+    fn = None
+    name = None
+    args = ()
+    kwargs = {}
+
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0:
+            self.fn = args[0]
+            self.name = args[0].__name__
+        else:
+            self.args = args
+            self.kwargs = kwargs
+
+    def delay(self, *args, **kwargs):
+        kwargs.pop("queue", None)
+        kwargs.pop("eta", None)
+        return self.fn(*args, **kwargs)
+
+    def broadcast(self, *args, **kwargs):
+        return
+
+    def __call__(self, *args, **kwargs):
+        if not self.fn:
+            task = TaskMock(args[0])
+            task.args = self.args
+            task.kwargs = self.kwargs
+            return task
+        else:
+            return self.fn(*args, **kwargs)
+```
+
+Then in dev and test environments instead of using `wakaq.WakaQ` use `WakaQMock`.
 
 
 [wakatime]: https://wakatime.com
