@@ -1,5 +1,16 @@
 # CHANGES
 
+## 3.0.0 (2024-11-12) [commits](https://github.com/wakatime/wakaq/compare/2.1.25...3.0.0)
+
+#### Breaking
+
+- Custom task wrapper should no longer use an inner function.
+
+#### Feature
+
+- Support for async concurrent tasks on the same worker process.
+[#2](https://github.com/wakatime/wakaq/issues/2)
+
 ## 2.1.25 (2024-11-07) [commits](https://github.com/wakatime/wakaq/compare/2.1.24...2.1.25)
 
 #### Misc
