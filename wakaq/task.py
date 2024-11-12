@@ -1,3 +1,6 @@
+import asyncio
+import inspect
+import threading
 from datetime import timedelta
 
 from .queue import Queue
@@ -43,12 +46,29 @@ class Task:
         eta = kwargs.pop("eta", None)
 
         if self.wakaq.synchronous_mode:
+            if inspect.iscoroutinefunction(self.fn):
+                loop = self.get_event_loop()
+                coroutine = self.fn(*args, **kwargs)
+                return asyncio.run_coroutine_threadsafe(coroutine, loop).result()
             return self.fn(*args, **kwargs)
 
         if eta:
             self.wakaq._enqueue_with_eta(self.name, queue, args, kwargs, eta)
         else:
             self.wakaq._enqueue_at_end(self.name, queue, args, kwargs)
+
+    def get_event_loop(self):
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        if not loop.is_running():
+            thread = threading.Thread(target=loop.run_forever, daemon=True)
+            thread.start()
+
+        return loop
 
     def _broadcast(self, *args, **kwargs) -> int:
         """Run task in the background on all workers.

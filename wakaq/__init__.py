@@ -23,6 +23,7 @@ class WakaQ:
     soft_timeout = None
     hard_timeout = None
     concurrency = 0
+    async_concurrency = 0
     schedules = []
     exclude_queues = []
     max_retries = None
@@ -53,6 +54,7 @@ class WakaQ:
         password=None,
         db=0,
         concurrency=0,
+        async_concurrency=0,
         exclude_queues=[],
         max_retries=None,
         soft_timeout=None,
@@ -82,6 +84,7 @@ class WakaQ:
         self.broker_keys = [x.broker_key for x in self.queues if x.name not in self.exclude_queues]
         self.schedules = [CronTask.create(x) for x in schedules]
         self.concurrency = self._format_concurrency(concurrency)
+        self.async_concurrency = self._format_concurrency(async_concurrency, is_async=True)
         self.soft_timeout = soft_timeout.total_seconds() if isinstance(soft_timeout, timedelta) else soft_timeout
         self.hard_timeout = hard_timeout.total_seconds() if isinstance(hard_timeout, timedelta) else hard_timeout
         self.wait_timeout = wait_timeout.total_seconds() if isinstance(wait_timeout, timedelta) else wait_timeout
@@ -245,10 +248,10 @@ class WakaQ:
             queue.priority = lowest_priority + 1
         return queue
 
-    def _format_concurrency(self, concurrency):
+    def _format_concurrency(self, concurrency, is_async=None):
         if not concurrency:
             return 0
         try:
             return int(safe_eval(str(concurrency), {"cores": multiprocessing.cpu_count()}))
         except Exception as e:
-            raise Exception(f"Error parsing concurrency: {e}")
+            raise Exception(f"Error parsing {'async_' if is_async else ''}concurrency: {e}")

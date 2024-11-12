@@ -57,6 +57,11 @@ wakaq = WakaQ(
     # the current machine.
     concurrency="cores*4",
 
+    # Number of concurrent asyncio tasks per worker process. Must be an int or
+    # str which evaluates to an int. The variable "cores" is replaced with the
+    # number of processors on the current machine. Default is zero for no limit.
+    async_concurrency=50,
+
     # Raise SoftTimeout in a task if it runs longer than 30 seconds. Can also be set per
     # task or queue. If no soft timeout set, tasks can run forever.
     soft_timeout=30,  # seconds
@@ -104,17 +109,23 @@ def mytask(x, y):
 
 
 @wakaq.task
-def anothertask():
+def a_cpu_intensive_task():
+    print("hello world")
+
+
+@wakaq.task
+async def an_io_intensive_task():
     print("hello world")
 
 
 @wakaq.wrap_tasks_with
-def custom_task_decorator(fn):
-    def inner(*args, **kwargs):
-        # do something before each task runs
-        fn(*args, **kwargs)
-        # do something after each task runs
-    return inner
+def custom_task_decorator(fn, args, kwargs):
+    # do something before each task runs, for ex: `with app.app_context():`
+    if inspect.iscoroutinefunction(fn):
+        await fn(*payload["args"], **payload["kwargs"])
+    else:
+        fn(*payload["args"], **payload["kwargs"])
+    # do something after each task runs
 
 
 if __name__ == '__main__':
@@ -130,6 +141,9 @@ if __name__ == '__main__':
 
     # print hello world on a worker somewhere, after 10 seconds from now
     anothertask.delay(eta=timedelta(seconds=10))
+
+    # print hello world on a worker concurrently, even if you only have 1 worker process
+    an_io_intensive_task.delay()
 ```
 
 ## Deploying
