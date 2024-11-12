@@ -60,7 +60,7 @@ wakaq = WakaQ(
     # Number of concurrent asyncio tasks per worker process. Must be an int or
     # str which evaluates to an int. The variable "cores" is replaced with the
     # number of processors on the current machine. Default is zero for no limit.
-    async_concurrency=50,
+    async_concurrency=0,
 
     # Raise SoftTimeout in a task if it runs longer than 30 seconds. Can also be set per
     # task or queue. If no soft timeout set, tasks can run forever.
@@ -229,10 +229,10 @@ Then in dev and test environments instead of using `wakaq.WakaQ` use `WakaQMock`
 
 
 [wakatime]: https://wakatime.com
-[broadcast]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/task.py#L47
-[soft timeout]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/exceptions.py#L8
-[hard timeout]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/worker.py#L400
-[wakaq init]: https://github.com/wakatime/wakaq/blob/2300ed220d1d9e65e3f9bf328e3059a124f6b529/wakaq/__init__.py#L49
+[broadcast]: https://github.com/wakatime/wakaq/blob/58a7e4ce29d9be928b16ffbf5c00c7106aab9360/wakaq/task.py#L65
+[soft timeout]: https://github.com/wakatime/wakaq/blob/58a7e4ce29d9be928b16ffbf5c00c7106aab9360/wakaq/exceptions.py#L5
+[hard timeout]: https://github.com/wakatime/wakaq/blob/58a7e4ce29d9be928b16ffbf5c00c7106aab9360/wakaq/worker.py#L590
+[wakaq init]: https://github.com/wakatime/wakaq/blob/58a7e4ce29d9be928b16ffbf5c00c7106aab9360/wakaq/__init__.py#L47
 [max open ports]: https://wakatime.com/blog/47-maximize-your-concurrent-web-server-connections
 [blog launch]: https://wakatime.com/blog/56-building-a-distributed-task-queue-in-python
 [hacker news]: https://news.ycombinator.com/item?id=32730038
