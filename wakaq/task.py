@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import threading
 from datetime import timedelta
 
@@ -44,13 +43,6 @@ class Task:
 
         queue = kwargs.pop("queue", None) or self.queue
         eta = kwargs.pop("eta", None)
-
-        if self.wakaq.synchronous_mode:
-            if inspect.iscoroutinefunction(self.fn):
-                loop = self.get_event_loop()
-                coroutine = self.fn(*args, **kwargs)
-                return asyncio.run_coroutine_threadsafe(coroutine, loop).result()
-            return self.fn(*args, **kwargs)
 
         if eta:
             self.wakaq._enqueue_with_eta(self.name, queue, args, kwargs, eta)
