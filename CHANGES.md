@@ -1,5 +1,12 @@
 # CHANGES
 
+## 3.0.3 (2024-11-13) [commits](https://github.com/wakatime/wakaq/compare/3.0.2...3.0.3)
+
+#### Bugfix
+
+- Fix UnboundLocalError for async task context
+[#15](https://github.com/wakatime/wakaq/pull/15)
+
 ## 3.0.2 (2024-11-13) [commits](https://github.com/wakatime/wakaq/compare/3.0.1...3.0.2)
 
 #### Bugfix
