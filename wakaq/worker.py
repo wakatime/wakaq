@@ -18,6 +18,7 @@ from .utils import (
     current_task,
     exception_in_chain,
     flush_fh,
+    get_timeouts,
     kill,
     mem_usage_percent,
     read_fd,
@@ -70,16 +71,9 @@ class Child:
 
     def set_timeouts(self, wakaq, task=None, queue=None):
         self.current_task = task
-        self.soft_timeout = wakaq.soft_timeout
-        self.hard_timeout = wakaq.hard_timeout
-        if task and task.soft_timeout:
-            self.soft_timeout = task.soft_timeout
-        elif queue and queue.soft_timeout:
-            self.soft_timeout = queue.soft_timeout
-        if task and task.hard_timeout:
-            self.hard_timeout = task.hard_timeout
-        elif queue and queue.hard_timeout:
-            self.hard_timeout = queue.hard_timeout
+        soft_timeout, hard_timeout = get_timeouts(wakaq, task=task, queue=queue)
+        self.soft_timeout = soft_timeout
+        self.hard_timeout = hard_timeout
 
     @property
     def mem_usage_percent(self):
@@ -278,7 +272,9 @@ class Worker:
             close_fd(sys.stderr)
 
     async def _event_loop(self):
-        while not self._stop_processing and (not self.wakaq.async_concurrency or len(self._active_async_tasks) < self.wakaq.async_concurrency):
+        while not self._stop_processing and (
+            not self.wakaq.async_concurrency or len(self._active_async_tasks) < self.wakaq.async_concurrency
+        ):
             self._send_ping_to_parent()
 
             queue_broker_key, payload = await self._blocking_dequeue()
@@ -304,21 +300,29 @@ class Worker:
                         raise
 
                     try:
-                        async_task = self._loop.create_task(self._execute_task(task, payload, queue=queue))
-                        async_task.add_done_callback(lambda t: self._active_async_tasks.remove(t))
+                        async_task = self._loop.create_task(
+                            self._execute_task(task, payload, queue=queue),
+                            name=task.name,
+                            context={"task": task, "payload": payload, "queue": queue, "start_time": time.time()},
+                        )
                         self._active_async_tasks.add(async_task)
 
                         if self._active_async_tasks:
-                            done, _ = await asyncio.wait(
+                            done, pending = await asyncio.wait(
                                 self._active_async_tasks, timeout=0.01, return_when=asyncio.FIRST_COMPLETED
                             )
 
                             for async_task in done:
+                                self._active_async_tasks.remove(async_task)
                                 try:
                                     await async_task
                                 except (MemoryError, BlockingIOError, BrokenPipeError):
+                                    context = async_task.get_context()
+                                    current_task.set((context["task"], context["payload"]))
                                     raise
                                 except Exception as e:
+                                    context = async_task.get_context()
+                                    current_task.set((context["task"], context["payload"]))
                                     if exception_in_chain(e, SoftTimeout):
                                         retry += 1
                                         max_retries = task.max_retries
@@ -337,6 +341,18 @@ class Worker:
                                             )
                                     else:
                                         log.error(traceback.format_exc())
+
+                            for async_task in pending:
+                                context = async_task.get_context()
+                                soft_timeout, _ = get_timeouts(self.wakaq, task=context["task"], queue=context["queue"])
+                                if soft_timeout:
+                                    runtime = time.time() - context["start_time"]
+                                    if runtime > soft_timeout and not async_task.cancelled():
+                                        current_task.set((context["task"], context["payload"]))
+                                        log.debug(
+                                            f"async task {context['task'].name} runtime {runtime} reached soft timeout, raising asyncio.CancelledError"
+                                        )
+                                        async_task.cancel()
 
                         current_task.set(None)
                         self._send_ping_to_parent()
@@ -444,8 +460,12 @@ class Worker:
 
         try:
             if callable(self.wakaq.wrap_tasks_function):
-                if inspect.iscoroutinefunction(task.fn) and not inspect.iscoroutinefunction(self.wakaq.wrap_tasks_function):
-                    raise WakaQError("Unable to execute sync wrap_tasks_with when task is async. Make your wrap_tasks_with function async.")
+                if inspect.iscoroutinefunction(task.fn) and not inspect.iscoroutinefunction(
+                    self.wakaq.wrap_tasks_function
+                ):
+                    raise WakaQError(
+                        "Unable to execute sync wrap_tasks_with when task is async. Make your wrap_tasks_with function async."
+                    )
                 if inspect.iscoroutinefunction(self.wakaq.wrap_tasks_function):
                     await self.wakaq.wrap_tasks_function(task.fn, payload["args"], payload["kwargs"])
                 else:

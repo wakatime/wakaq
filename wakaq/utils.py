@@ -269,3 +269,17 @@ def exception_in_chain(e, exception_type):
             return True
         e = e.__cause__ or e.__context__
     return False
+
+
+def get_timeouts(app, task=None, queue=None):
+    soft_timeout = app.soft_timeout
+    hard_timeout = app.hard_timeout
+    if task and task.soft_timeout:
+        soft_timeout = task.soft_timeout
+    elif queue and queue.soft_timeout:
+        soft_timeout = queue.soft_timeout
+    if task and task.hard_timeout:
+        hard_timeout = task.hard_timeout
+    elif queue and queue.hard_timeout:
+        hard_timeout = queue.hard_timeout
+    return soft_timeout, hard_timeout
