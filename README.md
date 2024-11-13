@@ -62,8 +62,9 @@ wakaq = WakaQ(
     # number of processors on the current machine. Default is zero for no limit.
     async_concurrency=0,
 
-    # Raise SoftTimeout in a task if it runs longer than 30 seconds. Can also be set per
-    # task or queue. If no soft timeout set, tasks can run forever.
+    # Raise SoftTimeout or asyncio.CancelledError in a task if it runs longer
+    # than 30 seconds. Can also be set per task or queue. If no soft timeout
+    # set, tasks can run forever.
     soft_timeout=30,  # seconds
 
     # SIGKILL a task if it runs longer than 1 minute. Can be set per task or queue.

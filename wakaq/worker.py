@@ -347,7 +347,7 @@ class Worker:
                                 soft_timeout, _ = get_timeouts(self.wakaq, task=context["task"], queue=context["queue"])
                                 if soft_timeout:
                                     runtime = time.time() - context["start_time"]
-                                    if runtime > soft_timeout and not async_task.cancelled():
+                                    if runtime - 0.1 > soft_timeout and not async_task.cancelled():
                                         current_task.set((context["task"], context["payload"]))
                                         log.debug(
                                             f"async task {context['task'].name} runtime {runtime} reached soft timeout, raising asyncio.CancelledError"
