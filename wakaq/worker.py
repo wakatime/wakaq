@@ -91,6 +91,7 @@ class Worker:
         "_num_tasks_processed",
         "_loop",
         "_active_async_tasks",
+        "_async_task_context",
     ]
 
     def __init__(self, wakaq=None):
@@ -239,6 +240,7 @@ class Worker:
                 self.wakaq.after_worker_started_callback()
 
             self._active_async_tasks = set()
+            self._async_task_context = {}
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
             self._loop.run_until_complete(self._event_loop())
@@ -300,12 +302,14 @@ class Worker:
                         raise
 
                     try:
-                        async_task = self._loop.create_task(
-                            self._execute_task(task, payload, queue=queue),
-                            name=task.name,
-                            context={"task": task, "payload": payload, "queue": queue, "start_time": time.time()},
-                        )
+                        async_task = self._loop.create_task(self._execute_task(task, payload, queue=queue))
                         self._active_async_tasks.add(async_task)
+                        self._async_task_context[async_task] = {
+                            "task": task,
+                            "payload": payload,
+                            "queue": queue,
+                            "start_time": time.time(),
+                        }
 
                         if self._active_async_tasks:
                             done, pending = await asyncio.wait(
@@ -314,14 +318,13 @@ class Worker:
 
                             for async_task in done:
                                 self._active_async_tasks.remove(async_task)
+                                context = self._async_task_context.pop(async_task)
                                 try:
                                     await async_task
                                 except (MemoryError, BlockingIOError, BrokenPipeError):
-                                    context = async_task.get_context()
                                     current_task.set((context["task"], context["payload"]))
                                     raise
                                 except Exception as e:
-                                    context = async_task.get_context()
                                     current_task.set((context["task"], context["payload"]))
                                     if exception_in_chain(e, SoftTimeout):
                                         retry += 1
@@ -343,7 +346,6 @@ class Worker:
                                         log.error(traceback.format_exc())
 
                             for async_task in pending:
-                                context = async_task.get_context()
                                 soft_timeout, _ = get_timeouts(self.wakaq, task=context["task"], queue=context["queue"])
                                 if soft_timeout:
                                     runtime = time.time() - context["start_time"]
