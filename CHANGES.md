@@ -1,5 +1,11 @@
 # CHANGES
 
+## 3.0.2 (2024-11-13) [commits](https://github.com/wakatime/wakaq/compare/3.0.1...3.0.2)
+
+#### Bugfix
+
+- Support Python versions older than 3.11.
+
 ## 3.0.1 (2024-11-13) [commits](https://github.com/wakatime/wakaq/compare/3.0.0...3.0.1)
 
 #### Bugfix
