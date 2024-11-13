@@ -1,5 +1,14 @@
 # CHANGES
 
+## 3.0.1 (2024-11-13) [commits](https://github.com/wakatime/wakaq/compare/3.0.0...3.0.1)
+
+#### Bugfix
+
+- Cancel async tasks when soft_timeout reached.
+[#14](https://github.com/wakatime/wakaq/pull/14)
+- Fix setting current async task for logging.
+[#14](https://github.com/wakatime/wakaq/pull/14)
+
 ## 3.0.0 (2024-11-12) [commits](https://github.com/wakatime/wakaq/compare/2.1.25...3.0.0)
 
 #### Breaking
