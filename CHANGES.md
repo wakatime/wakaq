@@ -1,5 +1,11 @@
 # CHANGES
 
+## 3.0.4 (2024-11-20) [commits](https://github.com/wakatime/wakaq/compare/3.0.3...3.0.4)
+
+#### Bugfix
+
+- Fix raising asyncio.exceptions.CancelledError when async task hits soft timeout.
+
 ## 3.0.3 (2024-11-13) [commits](https://github.com/wakatime/wakaq/compare/3.0.2...3.0.3)
 
 #### Bugfix
