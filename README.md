@@ -12,6 +12,7 @@ WakaQ is also available in [TypeScript][wakaq-ts].
 * Queue priority
 * Delayed tasks (run tasks after a timedelta eta)
 * Scheduled periodic tasks
+* Tasks can be [async][asyncio] or normal synchronous functions
 * [Broadcast][broadcast] a task to all workers
 * Task [soft][soft timeout] and [hard][hard timeout] timeout limits
 * Optionally retry tasks on soft timeout
@@ -238,3 +239,4 @@ Then in dev and test environments instead of using `wakaq.WakaQ` use `WakaQMock`
 [blog launch]: https://wakatime.com/blog/56-building-a-distributed-task-queue-in-python
 [hacker news]: https://news.ycombinator.com/item?id=32730038
 [wakaq-ts]: https://github.com/wakatime/wakaq-ts
+[asyncio]: https://docs.python.org/3/library/asyncio.html
