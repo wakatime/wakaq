@@ -18,7 +18,14 @@ def import_app(app):
     cwd = os.getcwd()
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
-    module_path, class_name = app.rsplit(".", 1)
+
+    try:
+        module_path, class_name = app.rsplit(".", 1)
+    except ValueError:
+        raise Exception(
+            f"Invalid app path: {app}. App must point to a WakaQ instance. For ex: yourapp.background.wakaq"
+        )
+
     module = import_module(module_path)
     wakaq = getattr(module, class_name)
     from . import WakaQ

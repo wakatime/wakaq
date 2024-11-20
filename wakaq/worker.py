@@ -254,6 +254,7 @@ class Worker:
             if exception_in_chain(e, SoftTimeout):
                 if current_task.get():
                     raise
+                log.error(traceback.format_exc())
             else:
                 log.error(traceback.format_exc())
 
@@ -301,75 +302,33 @@ class Worker:
                         current_task.set(None)
                         raise
 
-                    try:
-                        async_task = self._loop.create_task(self._execute_task(task, payload, queue=queue))
-                        self._active_async_tasks.add(async_task)
-                        self._async_task_context[async_task] = {
-                            "task": task,
-                            "payload": payload,
-                            "queue": queue,
-                            "start_time": time.time(),
-                        }
+                    async_task = self._loop.create_task(self._execute_task(task, payload, queue=queue))
+                    self._active_async_tasks.add(async_task)
+                    self._async_task_context[async_task] = {
+                        "task": task,
+                        "payload": payload,
+                        "queue": queue,
+                        "start_time": time.time(),
+                    }
 
-                        if self._active_async_tasks:
-                            done, pending = await asyncio.wait(
-                                self._active_async_tasks, timeout=0.01, return_when=asyncio.FIRST_COMPLETED
-                            )
+            try:
+                if self._active_async_tasks:
+                    done, pending = await asyncio.wait(
+                        self._active_async_tasks, timeout=0.01, return_when=asyncio.FIRST_COMPLETED
+                    )
 
-                            for async_task in done:
-                                self._active_async_tasks.remove(async_task)
-                                context = self._async_task_context.pop(async_task)
-                                try:
-                                    await async_task
-                                except (MemoryError, BlockingIOError, BrokenPipeError):
-                                    current_task.set((context["task"], context["payload"]))
-                                    raise
-                                except Exception as e:
-                                    current_task.set((context["task"], context["payload"]))
-                                    if exception_in_chain(e, SoftTimeout):
-                                        retry += 1
-                                        max_retries = task.max_retries
-                                        if max_retries is None:
-                                            max_retries = (
-                                                queue.max_retries
-                                                if queue.max_retries is not None
-                                                else self.wakaq.max_retries
-                                            )
-                                        if retry > max_retries:
-                                            log.error(traceback.format_exc())
-                                        else:
-                                            log.warning(traceback.format_exc())
-                                            self.wakaq._enqueue_at_end(
-                                                task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
-                                            )
-                                    else:
-                                        log.error(traceback.format_exc())
-
-                            for async_task in pending:
-                                context = self._async_task_context.get(async_task)
-                                if not context:
-                                    continue
-                                soft_timeout, _ = get_timeouts(self.wakaq, task=context["task"], queue=context["queue"])
-                                if not soft_timeout:
-                                    continue
-                                runtime = time.time() - context["start_time"]
-                                if runtime - 0.1 > soft_timeout and not async_task.cancelled():
-                                    current_task.set((context["task"], context["payload"]))
-                                    log.debug(
-                                        f"async task {context['task'].name} runtime {runtime} reached soft timeout, raising asyncio.CancelledError"
-                                    )
-                                    async_task.cancel()
-
-                        current_task.set(None)
-                        self._send_ping_to_parent()
-
-                    except (MemoryError, BlockingIOError, BrokenPipeError):
-                        raise
-
-                    except Exception as e:
-                        if exception_in_chain(e, SoftTimeout):
+                    for async_task in done:
+                        self._active_async_tasks.remove(async_task)
+                        context = self._async_task_context.pop(async_task)
+                        try:
+                            await async_task
+                        except (MemoryError, BlockingIOError, BrokenPipeError):
+                            current_task.set((context["task"], context["payload"]))
+                            raise
+                        except asyncio.exceptions.CancelledError:
+                            current_task.set((context["task"], context["payload"]))
                             retry += 1
-                            max_retries = task.max_retries
+                            max_retries = context["task"].max_retries
                             if max_retries is None:
                                 max_retries = (
                                     queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
@@ -379,14 +338,59 @@ class Worker:
                             else:
                                 log.warning(traceback.format_exc())
                                 self.wakaq._enqueue_at_end(
-                                    task.name, queue.name, payload["args"], payload["kwargs"], retry=retry
+                                    context["task"].name,
+                                    queue.name,
+                                    context["payload"]["args"],
+                                    context["payload"]["kwargs"],
+                                    retry=retry,
                                 )
-                        else:
-                            log.error(traceback.format_exc())
+                        except Exception as e:
+                            current_task.set((context["task"], context["payload"]))
+                            if exception_in_chain(e, SoftTimeout):
+                                retry += 1
+                                max_retries = context["task"].max_retries
+                                if max_retries is None:
+                                    max_retries = (
+                                        queue.max_retries if queue.max_retries is not None else self.wakaq.max_retries
+                                    )
+                                if retry > max_retries:
+                                    log.error(traceback.format_exc())
+                                else:
+                                    log.warning(traceback.format_exc())
+                                    self.wakaq._enqueue_at_end(
+                                        context["task"].name,
+                                        queue.name,
+                                        context["payload"]["args"],
+                                        context["payload"]["kwargs"],
+                                        retry=retry,
+                                    )
+                            else:
+                                log.error(traceback.format_exc())
 
-                    # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
-                    except:
-                        log.error(traceback.format_exc())
+                    for async_task in pending:
+                        context = self._async_task_context.get(async_task)
+                        if not context:
+                            continue
+                        soft_timeout, _ = get_timeouts(self.wakaq, task=context["task"], queue=context["queue"])
+                        if not soft_timeout:
+                            continue
+                        runtime = time.time() - context["start_time"]
+                        if runtime - 0.1 > soft_timeout and not async_task.cancelled():
+                            current_task.set((context["task"], context["payload"]))
+                            log.debug(
+                                f"async task {context['task'].name} runtime {runtime} reached soft timeout, raising asyncio.CancelledError"
+                            )
+                            async_task.cancel()
+
+                current_task.set(None)
+                self._send_ping_to_parent()
+
+            except (MemoryError, BlockingIOError, BrokenPipeError):
+                raise
+
+            # catch BaseException, SystemExit, KeyboardInterrupt, and GeneratorExit
+            except:
+                log.error(traceback.format_exc())
 
             flush_fh(sys.stdout)
             flush_fh(sys.stderr)
