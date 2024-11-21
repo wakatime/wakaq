@@ -1,5 +1,12 @@
 # CHANGES
 
+## 3.0.5 (2024-11-21) [commits](https://github.com/wakatime/wakaq/compare/3.0.4...3.0.5)
+
+#### Bugfix
+
+- Stop waiting for async tasks after exception raised.
+[#7](https://github.com/wakatime/wakaq/issues/7)
+
 ## 3.0.4 (2024-11-20) [commits](https://github.com/wakatime/wakaq/compare/3.0.3...3.0.4)
 
 #### Bugfix
