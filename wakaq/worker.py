@@ -263,8 +263,6 @@ class Worker:
 
         finally:
             if hasattr(self, "_loop"):
-                pending = asyncio.all_tasks(self._loop)
-                self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
                 self._loop.close()
 
             flush_fh(sys.stdout)
