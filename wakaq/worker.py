@@ -594,7 +594,6 @@ class Worker:
         for child in self.children:
             ping = read_fd(child.pingin)
             if ping != "":
-                log.debug(f"received ping from child process {child.pid}")
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
                 ping = ping[:-1] if ping[-1] == "\n" else ping
