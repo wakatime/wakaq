@@ -1,5 +1,11 @@
 # CHANGES
 
+## 3.0.6 (2025-01-04) [commits](https://github.com/wakatime/wakaq/compare/3.0.5...3.0.6)
+
+#### Bugfix
+
+- Remove noisy debug log.
+
 ## 3.0.5 (2024-11-21) [commits](https://github.com/wakatime/wakaq/compare/3.0.4...3.0.5)
 
 #### Bugfix
