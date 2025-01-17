@@ -118,12 +118,12 @@ async def an_io_intensive_task():
 
 
 @wakaq.wrap_tasks_with
-def custom_task_decorator(fn, args, kwargs):
+async def custom_task_decorator(fn, args, kwargs):
     # do something before each task runs, for ex: `with app.app_context():`
     if inspect.iscoroutinefunction(fn):
-        await fn(*payload["args"], **payload["kwargs"])
+        await fn(*args, **kwargs)
     else:
-        fn(*payload["args"], **payload["kwargs"])
+        fn(*args, **kwargs)
     # do something after each task runs
 
 
