@@ -176,14 +176,17 @@ class Worker:
             self._pubsub = self.wakaq.broker.pubsub()
             self._pubsub.subscribe(self.wakaq.broadcast_key)
 
-            while not self._stop_processing:
-                self._read_child_logs()
-                self._check_max_mem_percent()
-                self._refork_missing_children()
-                self._enqueue_ready_eta_tasks()
-                self._cleanup_children()
-                self._check_child_runtimes()
-                self._listen_for_broadcast_task()
+            try:
+                while not self._stop_processing:
+                    self._read_child_logs()
+                    self._check_max_mem_percent()
+                    self._refork_missing_children()
+                    self._enqueue_ready_eta_tasks()
+                    self._cleanup_children()
+                    self._check_child_runtimes()
+                    self._listen_for_broadcast_task()
+            except SoftTimeout:
+                pass
 
             if len(self.children) > 0:
                 log.info("shutting down...")
