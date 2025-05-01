@@ -121,7 +121,6 @@ class WakaQ:
             username=username,
             password=password,
             db=db,
-            charset="utf-8",
             decode_responses=True,
             health_check_interval=health_check_interval,
             socket_timeout=socket_timeout,
