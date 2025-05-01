@@ -1,5 +1,12 @@
 # CHANGES
 
+## 3.0.7 (2025-05-01) [commits](https://github.com/wakatime/wakaq/compare/3.0.6...3.0.7)
+
+#### Bugfix
+
+- Ignore SoftTimeout in parent process.
+- Remove deprecated charset redis config option.
+
 ## 3.0.6 (2025-01-04) [commits](https://github.com/wakatime/wakaq/compare/3.0.5...3.0.6)
 
 #### Bugfix
