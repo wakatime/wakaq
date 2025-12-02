@@ -1,5 +1,11 @@
 # CHANGES
 
+## 4.0.1 (2025-12-02) [commits](https://github.com/wakatime/wakaq/compare/4.0.0...4.0.1)
+
+#### Bugfix
+
+- Fix accessing constant value.
+
 ## 4.0.0 (2025-12-02) [commits](https://github.com/wakatime/wakaq/compare/3.0.7...4.0.0)
 
 #### Breaking
