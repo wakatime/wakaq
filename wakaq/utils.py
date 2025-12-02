@@ -219,7 +219,7 @@ _operations = {
 
 def _safe_eval(node, variables, functions):
     if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-        return node.n
+        return node.value
     elif isinstance(node, ast.Name):
         try:
             return variables[node.id]
