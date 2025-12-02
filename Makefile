@@ -10,16 +10,13 @@ all:
 test:
 	@pytest
 
-release: clean build rename upload
+release: clean build upload
 
 clean:
 	@rm -f dist/*
 
 build:
 	@python ./setup.py sdist
-
-rename:
-	for f in dist/WakaQ-*.tar.gz; do mv "$$f" "$$(echo "$$f" | sed s/WakaQ/wakaq/)"; done
 
 upload:
 	@twine upload ./dist/*
