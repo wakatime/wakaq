@@ -658,7 +658,7 @@ class Worker:
                 log.debug(traceback.format_exc())
             self._pubsub = self.wakaq.broker.pubsub()
             self._pubsub.subscribe(self.wakaq.broadcast_key)
-            log.info("redis pubsub connected")
+            log.info("listening for broadcast tasks")
         except:
             self._pubsub = None
             log.warning("redis pubsub connection failure")
