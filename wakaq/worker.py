@@ -2,7 +2,6 @@ import asyncio
 import inspect
 import logging
 import os
-import random
 import signal
 import sys
 import time
@@ -591,9 +590,9 @@ class Worker:
 
     def _child_using_most_mem(self):
         try:
-            return max(self.children, lambda c: c.mem_usage_percent)
-        except:
-            return random.choice(self.children)
+            return max(self.children, key=lambda c: c.mem_usage_percent)
+        except ValueError:
+            return None
 
     def _check_child_runtimes(self):
         for child in self.children:
