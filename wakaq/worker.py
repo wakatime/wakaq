@@ -38,6 +38,7 @@ class Child:
         "pid",
         "stdin",
         "pingin",
+        "ping_buffer",
         "broadcastout",
         "last_ping",
         "soft_timeout_reached",
@@ -56,6 +57,7 @@ class Child:
         self.pid = pid
         self.stdin = stdin
         self.pingin = pingin
+        self.ping_buffer = ""
         self.broadcastout = broadcastout
         self.soft_timeout_reached = False
         self.last_ping = time.time()
@@ -595,11 +597,12 @@ class Worker:
 
     def _check_child_runtimes(self):
         for child in self.children:
-            ping = read_fd(child.pingin)
-            if ping != "":
+            child.ping_buffer += read_fd(child.pingin)
+            if child.ping_buffer[-1:] == "\n":
                 child.last_ping = time.time()
                 child.soft_timeout_reached = False
-                ping = ping[:-1] if ping[-1] == "\n" else ping
+                ping = child.ping_buffer[:-1]
+                child.ping_buffer = ""
                 ping = ping.rsplit("\n", 1)[-1]
                 task, queue = None, None
                 if ping != "":
