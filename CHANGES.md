@@ -1,5 +1,11 @@
 # CHANGES
 
+## 4.0.3 (2026-02-01) [commits](https://github.com/wakatime/wakaq/compare/4.0.2...4.0.3)
+
+#### Bugfix
+
+- Handle redis pubsub connection errors and attempt to reconnect.
+
 ## 4.0.2 (2026-02-01) [commits](https://github.com/wakatime/wakaq/compare/4.0.1...4.0.2)
 
 #### Bugfix
