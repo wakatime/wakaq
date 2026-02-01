@@ -1,5 +1,12 @@
 # CHANGES
 
+## 4.0.2 (2026-02-01) [commits](https://github.com/wakatime/wakaq/compare/4.0.1...4.0.2)
+
+#### Bugfix
+
+- Fix picking child process using most RAM.
+- Handle corrupted ping messages from child processes when server out of available RAM.
+
 ## 4.0.1 (2025-12-02) [commits](https://github.com/wakatime/wakaq/compare/4.0.0...4.0.1)
 
 #### Bugfix
