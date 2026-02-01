@@ -8,8 +8,9 @@ import time
 import traceback
 
 import psutil
+import redis
 
-from .exceptions import SoftTimeout, WakaQError
+from .exceptions import ConnectionError, SoftTimeout, WakaQError
 from .logger import log, setup_logging
 from .serializer import deserialize, serialize
 from .utils import (
@@ -121,7 +122,8 @@ class Worker:
         for child in self.children:
             kill(child.pid, signal.SIGTERM)
         try:
-            self._pubsub.unsubscribe()
+            if self._pubsub:
+                self._pubsub.unsubscribe()
         except:
             log.debug(traceback.format_exc())
 
@@ -174,8 +176,7 @@ class Worker:
         log.info("finished forking all workers")
 
         try:
-            self._pubsub = self.wakaq.broker.pubsub()
-            self._pubsub.subscribe(self.wakaq.broadcast_key)
+            self._setup_pubsub()
 
             try:
                 while not self._stop_processing:
@@ -626,7 +627,15 @@ class Worker:
                         kill(child.pid, signal.SIGQUIT)
 
     def _listen_for_broadcast_task(self):
-        msg = self._pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
+        if not self._pubsub:
+            self._setup_pubsub()
+            return
+        try:
+            msg = self._pubsub.get_message(ignore_subscribe_messages=True, timeout=self.wakaq.wait_timeout)
+        except (ConnectionError, BrokenPipeError, OSError):
+            log.warning("redis pubsub disconnected, reconnecting...")
+            self._setup_pubsub()
+            return
         if msg:
             payload = msg["data"]
             for child in self.children:
@@ -635,6 +644,25 @@ class Worker:
                 log.debug(f"run broadcast task: {payload}")
                 write_fd(child.broadcastout, f"{payload}\n")
                 break
+
+    def _setup_pubsub(self):
+        try:
+            if getattr(self, "_pubsub", None):
+                try:
+                    self._pubsub.close()
+                except:
+                    log.debug(traceback.format_exc())
+            try:
+                self.wakaq.broker.connection_pool.reset()
+            except:
+                log.debug(traceback.format_exc())
+            self._pubsub = self.wakaq.broker.pubsub()
+            self._pubsub.subscribe(self.wakaq.broadcast_key)
+            log.info("redis pubsub connected")
+        except:
+            self._pubsub = None
+            log.warning("redis pubsub connection failure")
+            log.debug(traceback.format_exc())
 
     async def _blocking_dequeue(self):
         if len(self.wakaq.broker_keys) == 0:
