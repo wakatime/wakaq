@@ -1,5 +1,11 @@
 # CHANGES
 
+## 4.0.4 (2026-02-01) [commits](https://github.com/wakatime/wakaq/compare/4.0.3...4.0.4)
+
+#### Bugfix
+
+- Fix import path.
+
 ## 4.0.3 (2026-02-01) [commits](https://github.com/wakatime/wakaq/compare/4.0.2...4.0.3)
 
 #### Bugfix
