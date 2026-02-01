@@ -8,9 +8,9 @@ import time
 import traceback
 
 import psutil
-import redis
+from redis.exceptions import ConnectionError
 
-from .exceptions import ConnectionError, SoftTimeout, WakaQError
+from .exceptions import SoftTimeout, WakaQError
 from .logger import log, setup_logging
 from .serializer import deserialize, serialize
 from .utils import (
