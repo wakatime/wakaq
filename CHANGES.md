@@ -1,5 +1,13 @@
 # CHANGES
 
+## 4.0.5 (2026-02-03) [commits](https://github.com/wakatime/wakaq/compare/4.0.4...4.0.5)
+
+#### Bugfix
+
+- Handle BlockingIOError when parent process writing to log file.
+- Handle missing process when checking ram usage.
+- Fix required python version 3.14.
+
 ## 4.0.4 (2026-02-01) [commits](https://github.com/wakatime/wakaq/compare/4.0.3...4.0.4)
 
 #### Bugfix
