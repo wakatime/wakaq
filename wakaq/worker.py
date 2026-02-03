@@ -555,13 +555,15 @@ class Worker:
             if not child.log_buffer:
                 continue
 
-            stream = log.handlers[0].stream
+            handler = log.handlers[0]
+            stream = handler.stream
             if stream is None:  # filehandle can disappear if we run out of RAM
                 print(child.log_buffer.decode("utf8"))
                 self._stop()
                 return
 
             pending = child.log_buffer
+            did_write = False
 
             try:
                 fd = stream.fileno()
@@ -572,6 +574,7 @@ class Worker:
                     if isinstance(chars_written, int) and chars_written > 0:
                         bytes_written = len(decoded[:chars_written].encode("utf8"))
                         pending = pending[bytes_written:]
+                        did_write = True
                     else:
                         pending = b""
                 except BlockingIOError as e:
@@ -579,6 +582,7 @@ class Worker:
                         decoded = pending.decode("utf8")
                         bytes_written = len(decoded[: e.characters_written].encode("utf8"))
                         pending = pending[bytes_written:]
+                        did_write = True
                 except BrokenPipeError:
                     pending = b""
             else:
@@ -586,6 +590,7 @@ class Worker:
                     try:
                         chars_written = os.write(fd, pending)
                         pending = pending[chars_written:]
+                        did_write = True
                     except BlockingIOError:
                         break
                     except BrokenPipeError:
@@ -593,6 +598,8 @@ class Worker:
                         break
 
             child.log_buffer = pending
+            if did_write:
+                flush_fh(handler)
 
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
