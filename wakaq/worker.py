@@ -39,6 +39,7 @@ class Child:
         "stdin",
         "pingin",
         "ping_buffer",
+        "log_buffer",
         "broadcastout",
         "last_ping",
         "soft_timeout_reached",
@@ -58,6 +59,7 @@ class Child:
         self.stdin = stdin
         self.pingin = pingin
         self.ping_buffer = ""
+        self.log_buffer = b""
         self.broadcastout = broadcastout
         self.soft_timeout_reached = False
         self.last_ping = time.time()
@@ -544,12 +546,50 @@ class Worker:
     def _read_child_logs(self):
         for child in self.children:
             logs = read_fd(child.stdin)
-            if logs != "":
-                if log.handlers[0].stream is None:  # filehandle can disappear if we run out of RAM
-                    print(logs)
-                    self._stop()
-                else:
-                    log.handlers[0].stream.write(logs)
+            if logs:
+                child.log_buffer += logs.encode("utf8")
+
+            if not child.log_buffer:
+                continue
+
+            stream = log.handlers[0].stream
+            if stream is None:  # filehandle can disappear if we run out of RAM
+                print(child.log_buffer.decode("utf8"))
+                self._stop()
+                return
+
+            pending = child.log_buffer
+
+            try:
+                fd = stream.fileno()
+            except:
+                try:
+                    decoded = pending.decode("utf8")
+                    chars_written = stream.write(decoded)
+                    if isinstance(chars_written, int) and chars_written > 0:
+                        bytes_written = len(decoded[:chars_written].encode("utf8"))
+                        pending = pending[bytes_written:]
+                    else:
+                        pending = b""
+                except BlockingIOError as e:
+                    if hasattr(e, "characters_written") and e.characters_written:
+                        decoded = pending.decode("utf8")
+                        bytes_written = len(decoded[: e.characters_written].encode("utf8"))
+                        pending = pending[bytes_written:]
+                except BrokenPipeError:
+                    pending = b""
+            else:
+                while pending:
+                    try:
+                        chars_written = os.write(fd, pending)
+                        pending = pending[chars_written:]
+                    except BlockingIOError:
+                        break
+                    except BrokenPipeError:
+                        pending = b""
+                        break
+
+            child.log_buffer = pending
 
     def _check_max_mem_percent(self):
         if not self.wakaq.max_mem_percent:
