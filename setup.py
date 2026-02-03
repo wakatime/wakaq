@@ -18,7 +18,7 @@ setup(
     url=about["__url__"],
     packages=["wakaq"],
     package_dir={"wakaq": "wakaq"},
-    python_requires=">= 3.7",
+    python_requires=">= 3.14",
     include_package_data=True,
     platforms="any",
     install_requires=install_requires,
