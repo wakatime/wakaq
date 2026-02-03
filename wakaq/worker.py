@@ -81,7 +81,10 @@ class Child:
 
     @property
     def mem_usage_percent(self):
-        return psutil.Process(self.pid).memory_percent()
+        try:
+            return psutil.Process(self.pid).memory_percent()
+        except psutil.NoSuchProcess:
+            return 0
 
 
 class Worker:
