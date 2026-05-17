@@ -9,6 +9,7 @@ import traceback
 
 import psutil
 from redis.exceptions import ConnectionError
+from typing import Union
 
 from .exceptions import SoftTimeout, WakaQError
 from .logger import log, setup_logging
@@ -41,6 +42,7 @@ class Child:
         "ping_buffer",
         "log_buffer",
         "broadcastout",
+        "retireout",
         "last_ping",
         "soft_timeout_reached",
         "max_mem_reached_at",
@@ -50,10 +52,11 @@ class Child:
         "current_task",
     ]
 
-    def __init__(self, pid, stdin, pingin, broadcastout):
+    def __init__(self, pid, stdin, pingin, broadcastout, retireout):
         os.set_blocking(stdin, False)
         os.set_blocking(pingin, False)
         os.set_blocking(broadcastout, False)
+        os.set_blocking(retireout, False)
         self.current_task = None
         self.pid = pid
         self.stdin = stdin
@@ -61,6 +64,7 @@ class Child:
         self.ping_buffer = ""
         self.log_buffer = b""
         self.broadcastout = broadcastout
+        self.retireout = retireout
         self.soft_timeout_reached = False
         self.last_ping = time.time()
         self.done = False
@@ -72,6 +76,7 @@ class Child:
         close_fd(self.pingin)
         close_fd(self.stdin)
         close_fd(self.broadcastout)
+        close_fd(self.retireout)
 
     def set_timeouts(self, wakaq, task=None, queue=None):
         self.current_task = task
@@ -95,6 +100,8 @@ class Worker:
         "_pubsub",
         "_pingout",
         "_broadcastin",
+        "_retirein",
+        "_retire_after_current_task",
         "_num_tasks_processed",
         "_loop",
         "_active_async_tasks",
@@ -158,18 +165,21 @@ class Worker:
     def _fork(self) -> int:
         pingin, pingout = os.pipe()
         broadcastin, broadcastout = os.pipe()
+        retirein, retireout = os.pipe()
         stdin, stdout = os.pipe()
         pid = os.fork()
         if pid == 0:  # child worker process
             close_fd(stdin)
             close_fd(pingin)
             close_fd(broadcastout)
-            self._child(stdout, pingout, broadcastin)
+            close_fd(retireout)
+            self._child(stdout, pingout, broadcastin, retirein)
         else:  # parent process
             close_fd(stdout)
             close_fd(pingout)
             close_fd(broadcastin)
-            self._add_child(pid, stdin, pingin, broadcastout)
+            close_fd(retirein)
+            self._add_child(pid, stdin, pingin, broadcastout, retireout)
         return pid
 
     def _parent(self):
@@ -210,16 +220,18 @@ class Worker:
                 print(traceback.format_exc())
             self._stop()
 
-    def _child(self, stdout, pingout, broadcastin):
+    def _child(self, stdout, pingout, broadcastin, retirein):
         os.dup2(stdout, sys.stdout.fileno())
         os.dup2(stdout, sys.stderr.fileno())
         close_fd(stdout)
         os.set_blocking(pingout, False)
         os.set_blocking(broadcastin, False)
+        os.set_blocking(retirein, False)
         os.set_blocking(sys.stdout.fileno(), False)
         os.set_blocking(sys.stderr.fileno(), False)
         self._pingout = pingout
         self._broadcastin = broadcastin
+        self._retirein = retirein
 
         # reset sigchld
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
@@ -251,6 +263,7 @@ class Worker:
 
             self._active_async_tasks = set()
             self._async_task_context = {}
+            self._retire_after_current_task = False
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
             self._loop.run_until_complete(self._event_loop())
@@ -278,17 +291,22 @@ class Worker:
             flush_fh(sys.stdout)
             flush_fh(sys.stderr)
             close_fd(self._broadcastin)
+            close_fd(self._retirein)
             close_fd(self._pingout)
             close_fd(sys.stdout)
             close_fd(sys.stderr)
 
     async def _event_loop(self):
-        while not self._stop_processing and (
-            not self.wakaq.async_concurrency or len(self._active_async_tasks) < self.wakaq.async_concurrency
-        ):
+        while not self._stop_processing:
+            self._read_retire_request()
             self._send_ping_to_parent()
 
-            queue_broker_key, payload = await self._blocking_dequeue()
+            queue_broker_key, payload = None, None
+            can_dequeue = not self._retire_after_current_task and (
+                not self.wakaq.async_concurrency or len(self._active_async_tasks) < self.wakaq.async_concurrency
+            )
+            if can_dequeue:
+                queue_broker_key, payload = await self._blocking_dequeue()
             if payload is not None:
                 try:
                     task = self.wakaq.tasks[payload["name"]]
@@ -402,7 +420,11 @@ class Worker:
 
             flush_fh(sys.stdout)
             flush_fh(sys.stderr)
-            await self._execute_broadcast_tasks()
+            self._read_retire_request()
+            if not self._retire_after_current_task:
+                await self._execute_broadcast_tasks()
+            if self._retire_after_current_task and not self._active_async_tasks:
+                self._stop_processing = True
             if self.wakaq.max_tasks_per_worker and self._num_tasks_processed >= self.wakaq.max_tasks_per_worker:
                 log.info(f"restarting worker after {self._num_tasks_processed} tasks")
                 self._stop_processing = True
@@ -415,8 +437,8 @@ class Worker:
             msg = f"{msg}:{queue_name or ''}"
         write_fd_or_raise(self._pingout, f"{msg}\n")
 
-    def _add_child(self, pid, stdin, pingin, broadcastout):
-        self.children.append(Child(pid, stdin, pingin, broadcastout))
+    def _add_child(self, pid, stdin, pingin, broadcastout, retireout):
+        self.children.append(Child(pid, stdin, pingin, broadcastout, retireout))
 
     def _remove_all_children(self):
         for child in self.children:
@@ -440,6 +462,10 @@ class Worker:
 
     def _on_soft_timeout_child(self, signum, frame):
         raise SoftTimeout("SoftTimeout")
+
+    def _read_retire_request(self):
+        if read_fd(self._retirein):
+            self._retire_after_current_task = True
 
     def _on_child_exited(self, signum, frame):
         for child in self.children:
@@ -617,14 +643,13 @@ class Worker:
         log.info(f"Mem usage {percent_used}% is more than max_mem_percent threshold ({self.wakaq.max_mem_percent}%)")
         self._log_mem_usage_of_all_children()
         child = self._child_using_most_mem()
-        if child:
+        if child and not child.max_mem_reached_at:
             task = ""
             if child.current_task:
-                task = f" while processing task {child.current_task.name}"
+                task = f" after task {child.current_task.name} finishes"
             log.info(f"Stopping child process {child.pid}{task}...")
-            child.soft_timeout_reached = True  # prevent raising SoftTimeout twice for same child
             child.max_mem_reached_at = now
-            kill(child.pid, signal.SIGTERM)
+            write_fd(child.retireout, "1\n")
 
     def _log_mem_usage_of_all_children(self):
         if self.wakaq.worker_log_level != logging.DEBUG:
@@ -639,7 +664,7 @@ class Worker:
                 log.warning(f"Unable to get ram usage of child process {child.pid}{task}")
                 log.warning(traceback.format_exc())
 
-    def _child_using_most_mem(self):
+    def _child_using_most_mem(self) -> Union[Child, None]:
         try:
             return max(self.children, key=lambda c: c.mem_usage_percent)
         except ValueError:
