@@ -1,5 +1,11 @@
 # CHANGES
 
+## 4.0.6 (2026-05-17) [commits](https://github.com/wakatime/wakaq/compare/4.0.5...4.0.6)
+
+#### Bugfix
+
+- Stop child process after current task finishes when max RAM limit reached.
+
 ## 4.0.5 (2026-02-03) [commits](https://github.com/wakatime/wakaq/compare/4.0.4...4.0.5)
 
 #### Bugfix
