@@ -21,6 +21,52 @@ WakaQ is also available in [TypeScript][wakaq-ts].
 
 Want more features like rate limiting, task deduplication, etc? Too bad, feature PRs are not accepted. Maximal features belong in your app’s worker tasks.
 
+## Why WakaQ?
+
+**Polyglot by design.** WakaQ works with Python and [TypeScript][wakaq-ts], speaking the same Redis queue protocol.
+Enqueue a task from a Python service and run it on a Node worker, or the
+reverse. One Redis instance, one set of queues, two languages. No other task
+queue in the comparison below can do this.
+
+**Production-proven.** WakaQ has powered background processing at
+[WakaTime](https://wakatime.com) for many years (since 2022). It isn't a proof of concept,
+it runs real workloads every day.
+
+**A codebase you can actually read.** WakaQ is small and deliberately simple.
+You can read the entire source in an afternoon, so when something misbehaves
+you can understand exactly why instead of spelunking through a sprawling
+framework. Cron schedules, ETA tasks, broadcast tasks, soft/hard timeouts, and
+retries — all in a surface area small enough to keep in your head.
+
+## Background Task Queue Comparison
+
+### Python
+
+| # | Library | License | Broker(s) | Notes |
+|---|---------|---------|-----------|-------|
+| 1 | Celery | BSD-3 | RabbitMQ, Redis, SQS | Industry standard. Most features, biggest ecosystem; heavy to operate. |
+| 2 | arq | MIT | Redis | Best pick for `asyncio`-native code. Small, well-built. |
+| 3 | TaskTiger | MIT | Redis | Reliability-focused: unique tasks, task locks, flexible retries, periodic tasks, subqueues, per-task forking. Production-proven at Close. |
+| 4 | RQ | BSD-3 | Redis | Simplest sync mental model. Big community, thinner feature set. |
+| 5 | **WakaQ** | **BSD-3** | **Redis** | **Lightweight Celery alternative — cron/scheduled, ETA, broadcast tasks, soft/hard timeouts, retries. Polyglot with `wakaq-ts`.** |
+| 6 | Dramatiq | LGPL-3 | RabbitMQ, Redis | Clean API and middleware, but LGPL gets flagged by many corporate compliance reviews. |
+| 7 | TaskIQ | MIT | Redis, RabbitMQ, NATS | Async-first, pluggable broker/result backends. Newer, smaller community. |
+| 8 | huey | MIT | Redis, SQLite | Minimal; SQLite mode avoids running Redis. |
+| 9 | Procrastinate | MIT | Postgres | Pick only if you specifically want a Postgres broker. |
+
+### TypeScript / Node
+
+| # | Library | License | Broker(s) | Notes |
+|---|---------|---------|-----------|-------|
+| 1 | BullMQ | MIT | Redis | De facto standard. Flows, rate limiting, repeatable jobs. |
+| 2 | pg-boss | MIT | Postgres | Best option for transactional enqueue with no Redis. |
+| 3 | Graphile Worker | MIT | Postgres | High-throughput, `LISTEN/NOTIFY`-driven low latency. |
+| 4 | **WakaQ-TS** | **BSD-3** | **Redis** | **Lightweight; same cron/ETA/broadcast/timeout feature set as WakaQ. Polyglot with `wakaq`.** |
+| 5 | Bee-Queue | MIT | Redis | Simple and fast for short, latency-sensitive jobs. |
+| 6 | Agenda | MIT | MongoDB | Reasonable if already on MongoDB; uneven maintenance. |
+| 7 | Bull (legacy) | MIT | Redis | Superseded by BullMQ — don't start new projects on it. |
+
+
 ## Installing
 
     pip install wakaq
