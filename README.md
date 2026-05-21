@@ -48,7 +48,7 @@ retries — all in a surface area small enough to keep in your head.
 | 2 | arq | MIT | Redis | Best pick for `asyncio`-native code. Small, well-built. |
 | 3 | TaskTiger | MIT | Redis | Reliability-focused: unique tasks, task locks, flexible retries, periodic tasks, subqueues, per-task forking. Production-proven at Close. |
 | 4 | RQ | BSD-3 | Redis | Simplest sync mental model. Big community, thinner feature set. |
-| 5 | **WakaQ** | **BSD-3** | **Redis** | **Lightweight Celery alternative — cron/scheduled, ETA, broadcast tasks, soft/hard timeouts, retries. Polyglot with `wakaq-ts`.** |
+| 5 | WakaQ | BSD-3 | Redis | Lightweight Celery alternative — cron/scheduled, ETA, broadcast tasks, soft/hard timeouts, retries. Polyglot with `wakaq-ts`. |
 | 6 | Dramatiq | LGPL-3 | RabbitMQ, Redis | Clean API and middleware, but LGPL gets flagged by many corporate compliance reviews. |
 | 7 | TaskIQ | MIT | Redis, RabbitMQ, NATS | Async-first, pluggable broker/result backends. Newer, smaller community. |
 | 8 | huey | MIT | Redis, SQLite | Minimal; SQLite mode avoids running Redis. |
@@ -61,7 +61,7 @@ retries — all in a surface area small enough to keep in your head.
 | 1 | BullMQ | MIT | Redis | De facto standard. Flows, rate limiting, repeatable jobs. |
 | 2 | pg-boss | MIT | Postgres | Best option for transactional enqueue with no Redis. |
 | 3 | Graphile Worker | MIT | Postgres | High-throughput, `LISTEN/NOTIFY`-driven low latency. |
-| 4 | **WakaQ-TS** | **BSD-3** | **Redis** | **Lightweight; same cron/ETA/broadcast/timeout feature set as WakaQ. Polyglot with `wakaq`.** |
+| 4 | WakaQ-TS | BSD-3 | Redis | Lightweight; same cron/ETA/broadcast/timeout feature set as WakaQ. Polyglot with `wakaq`. |
 | 5 | Bee-Queue | MIT | Redis | Simple and fast for short, latency-sensitive jobs. |
 | 6 | Agenda | MIT | MongoDB | Reasonable if already on MongoDB; uneven maintenance. |
 | 7 | Bull (legacy) | MIT | Redis | Superseded by BullMQ — don't start new projects on it. |
